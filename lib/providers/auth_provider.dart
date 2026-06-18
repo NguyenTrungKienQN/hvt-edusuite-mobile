@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../models/user_models.dart';
 import '../services/api_service.dart';
@@ -51,18 +52,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> checkSession() async {
     state = AuthState.loading();
     final token = await authService.getToken();
+    final isBioEnabled = await authService.isBiometricEnabled();
+
     if (token == null) {
       state = AuthState.unauthenticated();
       return;
     }
 
-    final isBioEnabled = await authService.isBiometricEnabled();
     if (isBioEnabled) {
       final success = await authService.authenticateWithBiometrics();
       if (!success) {
+        await authService.logout();
         state = AuthState.unauthenticated();
         return;
       }
+    } else {
+      // Strict security: do not auto-login on startup without biometrics
+      await authService.logout();
+      state = AuthState.unauthenticated();
+      return;
     }
 
     try {
@@ -229,6 +237,45 @@ class AuthNotifier extends StateNotifier<AuthState> {
         tenPhuHuynh: name,
       );
       state = AuthState.authenticated(role: 'parent', student: updatedStudent);
+    }
+  }
+
+  // 6. Demo / Debug login bypass
+  void loginDemo(String role) {
+    if (!kDebugMode) {
+      throw UnsupportedError('Demo mode is only available in local development debug builds.');
+    }
+    
+    StudentModel? student;
+    UserModel? user;
+    
+    // This block is completely stripped by the compiler in release and profile builds.
+    // Therefore, none of these mock strings or models will exist in the production binary.
+    assert(() {
+      student = StudentModel(
+        id: 999,
+        ten: 'Nguyễn Trung Kiên',
+        lop: '12A1',
+        uidThe: '04E2D3B2',
+        gioiTinh: 'Nam',
+        ngaySinh: DateTime(2010, 5, 20),
+        anhThe: null,
+        tenPhuHuynh: 'Phụ huynh Trung Kiên',
+      );
+      user = UserModel(
+        id: 888,
+        username: 'gv_kien',
+        accountname: 'Cô Nguyễn Thị Hoa',
+        role: 'teacher',
+        lopQuyen: '12A1',
+      );
+      return true;
+    }());
+    
+    if (role == 'parent' && student != null) {
+      state = AuthState.authenticated(role: 'parent', student: student);
+    } else if (role == 'teacher' && user != null) {
+      state = AuthState.authenticated(role: 'teacher', user: user);
     }
   }
 }

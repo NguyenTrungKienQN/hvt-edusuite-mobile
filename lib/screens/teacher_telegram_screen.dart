@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import '../services/api_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:async';
 
 class TeacherTelegramScreen extends StatefulWidget {
@@ -140,7 +141,7 @@ class _TeacherTelegramScreenState extends State<TeacherTelegramScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 16, offset: const Offset(0, 4)),
                 ],
               ),
               child: Column(
@@ -162,7 +163,7 @@ class _TeacherTelegramScreenState extends State<TeacherTelegramScreen> {
                   Text(
                     'Liên kết tài khoản Telegram để nhận thông báo tức thời khi học sinh lớp $lop quẹt thẻ điểm danh.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: const Color(0xFF2D3142).withOpacity(0.6), fontSize: 14),
+                    style: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.6), fontSize: 14),
                   ),
                 ],
               ),
@@ -176,7 +177,7 @@ class _TeacherTelegramScreenState extends State<TeacherTelegramScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 16, offset: const Offset(0, 4)),
                 ],
               ),
               child: Column(
@@ -225,9 +226,7 @@ class _TeacherTelegramScreenState extends State<TeacherTelegramScreen> {
                     GestureDetector(
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: _code!));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Đã sao chép mã liên kết')),
-                        );
+                        Fluttertoast.showToast(msg: 'Đã sao chép mã liên kết', backgroundColor: Colors.green);
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

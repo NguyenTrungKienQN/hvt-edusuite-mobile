@@ -82,6 +82,24 @@ class AuthService {
     };
   }
 
+  // Track the last time biometric authentication was performed to prevent resume loops
+  DateTime? _lastAuthTime;
+
+  // Track if a biometric prompt is currently active to prevent concurrent prompts
+  bool _isPromptActive = false;
+
+  bool get isPromptActive => _isPromptActive;
+
+  // Check if we should bypass the resume biometric verification (e.g., if a prompt was just shown)
+  bool shouldBypassResumeAuth() {
+    if (_isPromptActive) return true;
+    final lastAuth = _lastAuthTime;
+    if (lastAuth != null && DateTime.now().difference(lastAuth).inSeconds < 3) {
+      return true;
+    }
+    return false;
+  }
+
   // Verify device compatibility with biometrics
   Future<bool> canUseBiometrics() async {
     final isSupported = await _auth.isDeviceSupported();
@@ -91,6 +109,8 @@ class AuthService {
 
   // Trigger Biometric scanner dialog (Face ID / Fingerprint check)
   Future<bool> authenticateWithBiometrics() async {
+    if (_isPromptActive) return false;
+    _isPromptActive = true;
     try {
       final availableBiometrics = await _auth.getAvailableBiometrics();
       String localizedReason = 'Vui lòng xác thực vân tay hoặc khuôn mặt để đăng nhập nhanh';
@@ -109,6 +129,9 @@ class AuthService {
       );
     } catch (e) {
       return false;
+    } finally {
+      _isPromptActive = false;
+      _lastAuthTime = DateTime.now();
     }
   }
 }

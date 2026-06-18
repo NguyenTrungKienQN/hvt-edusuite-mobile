@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/parent_attendance_screen.dart';
-import 'screens/teacher_attendance_approve_screen.dart';
 import 'screens/teacher_class_students_screen.dart';
 import 'screens/teacher_stats_screen.dart';
 import 'screens/ai_chat_screen.dart';
@@ -15,6 +19,9 @@ import 'screens/notifications_screen.dart';
 import 'services/api_service.dart';
 import 'services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/onboarding_screen.dart';
+
 
 class RestartWidget extends StatefulWidget {
   final Widget child;
@@ -49,6 +56,11 @@ class _RestartWidgetState extends State<RestartWidget> {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark, // Android: dark icons
+    statusBarBrightness: Brightness.light, // iOS: dark text
+  ));
   try {
     await Firebase.initializeApp();
     await NotificationService.instance.init();
@@ -64,6 +76,15 @@ void main() async {
   );
 }
 
+class AppleScrollBehavior extends ScrollBehavior {
+  const AppleScrollBehavior();
+  
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -72,14 +93,35 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'HVT EduSuite Mobile',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('vi', 'VN'),
+      ],
+      scrollBehavior: const AppleScrollBehavior(), // Apply Apple bounce globally
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
         primaryColor: const Color(0xFF6C63FF),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: <TargetPlatform, PageTransitionsBuilder>{
+            TargetPlatform.android: const CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: const CupertinoPageTransitionsBuilder(),
+          },
+        ),
         scaffoldBackgroundColor: const Color(0xFFF4F7FC), // Soft cream/light-blue
-        textTheme: GoogleFonts.outfitTextTheme(
-          ThemeData.light().textTheme,
-        ).apply(
+        appBarTheme: const AppBarTheme(
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark, // Android: dark icons
+            statusBarBrightness: Brightness.light, // iOS: dark text
+          ),
+        ),
+        textTheme: ThemeData.light().textTheme.apply(
           bodyColor: const Color(0xFF2D3142), // Deep grey/blue for high readability
           displayColor: const Color(0xFF1F2232),
         ),
@@ -87,7 +129,6 @@ class MyApp extends StatelessWidget {
           primary: Color(0xFF6C63FF),
           secondary: Color(0xFF00D2FF),
           surface: Colors.white,
-          background: Color(0xFFF4F7FC),
         ),
       ),
       home: const AuthWrapper(),
@@ -95,23 +136,59 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends ConsumerWidget {
+class AuthWrapper extends ConsumerStatefulWidget {
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends ConsumerState<AuthWrapper> {
+  bool? _onboardingCompleted;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOnboardingStatus();
+  }
+
+  Future<void> _loadOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+      
+      // DEBUG OVERRIDE: Always show onboarding in debug mode
+      if (kDebugMode) {
+        _onboardingCompleted = false;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_onboardingCompleted == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF4F7FC),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
+        ),
+      );
+    }
+
     final authState = ref.watch(authProvider);
+    Widget mainScreen;
 
     switch (authState.status) {
       case AuthStatus.authenticated:
         if (authState.role == 'parent') {
-          return ParentDashboard(student: authState.student!);
+          mainScreen = ParentDashboard(student: authState.student!);
         } else {
-          return TeacherDashboard(user: authState.user!);
+          mainScreen = TeacherDashboard(user: authState.user!);
         }
+        break;
       case AuthStatus.loading:
       case AuthStatus.unknown:
-        return const Scaffold(
+        mainScreen = const Scaffold(
           backgroundColor: Color(0xFFF4F7FC),
           body: Center(
             child: Column(
@@ -127,9 +204,32 @@ class AuthWrapper extends ConsumerWidget {
             ),
           ),
         );
+        break;
       case AuthStatus.unauthenticated:
-        return const LoginScreen();
+        mainScreen = const LoginScreen();
+        break;
     }
+
+    if (!_onboardingCompleted!) {
+      return Stack(
+        children: [
+          mainScreen,
+          Positioned.fill(
+            child: OnboardingScreen(
+              onFinish: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('onboarding_completed', true);
+                setState(() {
+                  _onboardingCompleted = true;
+                });
+              },
+            ),
+          ),
+        ],
+      );
+    }
+
+    return mainScreen;
   }
 }
 
@@ -246,10 +346,16 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
         );
       },
     );
-    controller.dispose();
+    // Defer disposal to ensure the dialog's exit animation completes
+    // without the TextFormField trying to read a disposed controller when the keyboard hides.
+    Future.delayed(const Duration(milliseconds: 500), () {
+      controller.dispose();
+    });
 
     if (newName != null && mounted) {
-      ref.read(authProvider.notifier).reloadSessionSilently();
+      setState(() {
+        _currentParentName = newName;
+      });
     }
   }
 
@@ -262,8 +368,25 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
       SettingsScreen(
         role: 'parent',
         data: widget.student,
-        onLogout: () => ref.read(authProvider.notifier).logout(),
-        onReload: () => ref.read(authProvider.notifier).reloadSessionSilently(),
+        onLogout: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(authProvider.notifier).logout();
+            }
+          });
+        },
+        onReload: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(authProvider.notifier).reloadSessionSilently();
+            }
+          });
+        },
+        onParentNameChanged: (name) {
+          setState(() {
+            _currentParentName = name;
+          });
+        },
       ),
     ];
 
@@ -283,7 +406,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 20,
               offset: const Offset(0, -4),
             )
@@ -295,7 +418,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
           elevation: 0,
           selectedIndex: _currentIndex,
           onDestinationSelected: (index) => setState(() => _currentIndex = index),
-          indicatorColor: const Color(0xFF6C63FF).withOpacity(0.12),
+          indicatorColor: const Color(0xFF6C63FF).withValues(alpha: 0.12),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: const [
             NavigationDestination(
@@ -336,7 +459,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
         children: [
           Text(
             'Xin chào,',
-            style: TextStyle(fontSize: 16, color: const Color(0xFF2D3142).withOpacity(0.6), fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 16, color: const Color(0xFF2D3142).withValues(alpha: 0.6), fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 4),
           Text(
@@ -348,10 +471,10 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [
-                  const Color(0xFFEEECFF),
-                  const Color(0xFFF6F8FF),
+                  Color(0xFFEEECFF),
+                  Color(0xFFF6F8FF),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -359,7 +482,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6C63FF).withOpacity(0.08),
+                  color: const Color(0xFF6C63FF).withValues(alpha: 0.08),
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 )
@@ -375,7 +498,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6C63FF).withOpacity(0.12),
+                          color: const Color(0xFF6C63FF).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
@@ -385,11 +508,10 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        widget.student.uidThe,
+                        widget.student.ten,
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 1.5,
                           color: Color(0xFF1F2232),
                         ),
                       ),
@@ -399,7 +521,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Lớp', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withOpacity(0.5))),
+                              Text('Lớp', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
                               const SizedBox(height: 2),
                               Text(widget.student.lop, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142))),
                             ],
@@ -408,7 +530,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Giới tính', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withOpacity(0.5))),
+                              Text('Giới tính', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
                               const SizedBox(height: 2),
                               Text(widget.student.gioiTinh, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142))),
                             ],
@@ -416,16 +538,37 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
                         children: [
-                          Text('Ngày sinh', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withOpacity(0.5))),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.student.ngaySinh is DateTime
-                                ? "${widget.student.ngaySinh.day.toString().padLeft(2, '0')}/${widget.student.ngaySinh.month.toString().padLeft(2, '0')}/${widget.student.ngaySinh.year}"
-                                : widget.student.ngaySinh.toString(),
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142)),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Ngày sinh', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
+                              const SizedBox(height: 2),
+                              Text(
+                                widget.student.ngaySinh is DateTime
+                                    ? "${widget.student.ngaySinh.day.toString().padLeft(2, '0')}/${widget.student.ngaySinh.month.toString().padLeft(2, '0')}/${widget.student.ngaySinh.year}"
+                                    : widget.student.ngaySinh.toString(),
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 28),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Mã thẻ', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
+                              const SizedBox(height: 2),
+                              Text(
+                                widget.student.uidThe,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  color: Color(0xFF2D3142),
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -441,14 +584,14 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       )
                     ],
                     image: widget.student.anhThe != null && widget.student.anhThe!.isNotEmpty
                         ? DecorationImage(
-                            image: NetworkImage(widget.student.anhThe!),
+                            image: CachedNetworkImageProvider(widget.student.anhThe!),
                             fit: BoxFit.cover,
                           )
                         : null,
@@ -506,7 +649,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4))
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 16, offset: const Offset(0, 4))
         ],
       ),
       child: Material(
@@ -549,68 +692,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
     );
   }
 
-  Widget _buildPlaceholderView(String title, IconData icon, Color color) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 64, color: color),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2232)),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tính năng đang được phát triển.',
-            style: TextStyle(color: const Color(0xFF2D3142).withOpacity(0.6)),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildAccountView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00CFE8).withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.person_rounded, size: 64, color: Color(0xFF00CFE8)),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Tài khoản & Cài đặt',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2232)),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: () => ref.read(authProvider.notifier).logout(),
-            icon: const Icon(Icons.logout_rounded, color: Colors.white),
-            label: const Text('Đăng xuất', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6B6B),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              elevation: 0,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ── Teacher Dashboard ───────────────────────────────────────────────────────
@@ -636,8 +718,20 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
       SettingsScreen(
         role: 'teacher',
         data: widget.user,
-        onLogout: () => ref.read(authProvider.notifier).logout(),
-        onReload: () => ref.read(authProvider.notifier).reloadSessionSilently(),
+        onLogout: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(authProvider.notifier).logout();
+            }
+          });
+        },
+        onReload: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(authProvider.notifier).reloadSessionSilently();
+            }
+          });
+        },
       ),
     ];
 
@@ -657,7 +751,7 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 20,
               offset: const Offset(0, -4),
             )
@@ -669,7 +763,7 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
           elevation: 0,
           selectedIndex: _currentIndex,
           onDestinationSelected: (index) => setState(() => _currentIndex = index),
-          indicatorColor: const Color(0xFF6C63FF).withOpacity(0.12),
+          indicatorColor: const Color(0xFF6C63FF).withValues(alpha: 0.12),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: const [
             NavigationDestination(
@@ -711,7 +805,7 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
         children: [
           Text(
             'Xin chào,',
-            style: TextStyle(fontSize: 16, color: const Color(0xFF2D3142).withOpacity(0.6), fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 16, color: const Color(0xFF2D3142).withValues(alpha: 0.6), fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 4),
           Text(
@@ -728,7 +822,7 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF20C997).withOpacity(0.08),
+                  color: const Color(0xFF20C997).withValues(alpha: 0.08),
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 )
@@ -739,7 +833,7 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF20C997).withOpacity(0.1),
+                    color: const Color(0xFF20C997).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.shield_rounded, color: Color(0xFF20C997), size: 32),
@@ -806,9 +900,7 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
             () {
               final lop = widget.user.lopQuyen;
               if (lop == null || lop.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('⚠️ Bạn chưa được phân công lớp chủ nhiệm')),
-                );
+                Fluttertoast.showToast(msg: '⚠️ Bạn chưa được phân công lớp chủ nhiệm', backgroundColor: Colors.orange);
                 return;
               }
               Navigator.push(
@@ -831,7 +923,7 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4))
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 16, offset: const Offset(0, 4))
         ],
       ),
       child: Material(
@@ -874,67 +966,6 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
     );
   }
 
-  Widget _buildPlaceholderView(String title, IconData icon, Color color) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 64, color: color),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2232)),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tính năng đang được phát triển.',
-            style: TextStyle(color: const Color(0xFF2D3142).withOpacity(0.6)),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildAccountView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00CFE8).withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.person_rounded, size: 64, color: Color(0xFF00CFE8)),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Tài khoản',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2232)),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: () => ref.read(authProvider.notifier).logout(),
-            icon: const Icon(Icons.logout_rounded, color: Colors.white),
-            label: const Text('Đăng xuất', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6B6B),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              elevation: 0,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 

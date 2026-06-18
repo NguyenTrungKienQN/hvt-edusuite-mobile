@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.hvt.edusuite" "\0"
+            VALUE "CompanyName", "com.hvt" "\0"
             VALUE "FileDescription", "hvt_edusuite_mobile" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "hvt_edusuite_mobile" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.hvt.edusuite. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.hvt. All rights reserved." "\0"
             VALUE "OriginalFilename", "hvt_edusuite_mobile.exe" "\0"
-            VALUE "ProductName", "hvt_edusuite_mobile" "\0"
+            VALUE "ProductName", "HVT EduSuite" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

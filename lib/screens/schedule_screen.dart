@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../services/api_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -89,9 +90,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       });
 
       await apiService.setWeekSchedule(widget.lop, weekPayload);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lưu thời khóa biểu thành công')),
-      );
+      if (!mounted) return;
+      Fluttertoast.showToast(msg: 'Lưu thời khóa biểu thành công', backgroundColor: Colors.green);
     } on DioException catch (e) {
       String errMsg = 'Lỗi lưu dữ liệu';
       if (e.response != null && e.response!.data != null) {
@@ -100,13 +100,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           errMsg = data['detail'].toString();
         }
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('⚠️ $errMsg')),
-      );
+      if (!mounted) return;
+      Fluttertoast.showToast(msg: '⚠️ $errMsg', backgroundColor: Colors.orange);
     } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Lỗi không xác định')),
-      );
+      if (!mounted) return;
+      Fluttertoast.showToast(msg: '⚠️ Lỗi không xác định', backgroundColor: Colors.red);
     } finally {
       setState(() {
         _isSaving = false;
@@ -191,7 +189,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
+                            color: Colors.black.withValues(alpha: 0.02),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           )
@@ -272,7 +270,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ? Switch(
                 value: isActive,
                 onChanged: onChanged,
-                activeColor: const Color(0xFF6C63FF),
+                activeThumbColor: const Color(0xFF6C63FF),
               )
             : Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../services/api_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class SetupPasswordScreen extends StatefulWidget {
   const SetupPasswordScreen({super.key});
@@ -17,7 +18,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
   final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _obscurePassword = true;
+  final bool _obscurePassword = true;
   String? _errorMessage;
 
   @override
@@ -48,9 +49,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.data['message'] ?? 'Thiết lập mật khẩu thành công!')),
-        );
+        Fluttertoast.showToast(msg: response.data['message'] ?? 'Thiết lập mật khẩu thành công!', backgroundColor: Colors.green);
         Navigator.pop(context); // Go back to login screen
       }
     } on DioException catch (e) {
@@ -118,7 +117,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Vui lòng nhập Mã thẻ RFID học sinh để xác minh danh tính phụ huynh và thiết lập mật khẩu.',
-                    style: TextStyle(fontSize: 14, color: const Color(0xFF2D3142).withOpacity(0.6)),
+                    style: TextStyle(fontSize: 14, color: const Color(0xFF2D3142).withValues(alpha: 0.6)),
                   ),
                   const SizedBox(height: 32),
 
@@ -143,7 +142,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 12, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: TextFormField(
@@ -151,7 +150,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                       style: const TextStyle(color: Color(0xFF1F2232), fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         hintText: 'Mã Thẻ Học Sinh (e.g. 04E2D3B2)',
-                        hintStyle: TextStyle(color: const Color(0xFF2D3142).withOpacity(0.4), fontSize: 14, fontWeight: FontWeight.normal),
+                        hintStyle: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.4), fontSize: 14, fontWeight: FontWeight.normal),
                         prefixIcon: const Icon(Icons.badge_rounded, color: Color(0xFF6C63FF)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -173,7 +172,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 12, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: TextFormField(
@@ -181,7 +180,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                       style: const TextStyle(color: Color(0xFF1F2232), fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         hintText: 'Họ và tên Phụ huynh',
-                        hintStyle: TextStyle(color: const Color(0xFF2D3142).withOpacity(0.4), fontSize: 14, fontWeight: FontWeight.normal),
+                        hintStyle: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.4), fontSize: 14, fontWeight: FontWeight.normal),
                         prefixIcon: const Icon(Icons.person_rounded, color: Color(0xFF6C63FF)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -203,7 +202,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 12, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: TextFormField(
@@ -212,7 +211,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                       style: const TextStyle(color: Color(0xFF1F2232), fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         hintText: 'Mật khẩu mới',
-                        hintStyle: TextStyle(color: const Color(0xFF2D3142).withOpacity(0.4), fontSize: 14, fontWeight: FontWeight.normal),
+                        hintStyle: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.4), fontSize: 14, fontWeight: FontWeight.normal),
                         prefixIcon: const Icon(Icons.lock_rounded, color: Color(0xFF6C63FF)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -234,7 +233,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 12, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: TextFormField(
@@ -243,7 +242,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                       style: const TextStyle(color: Color(0xFF1F2232), fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         hintText: 'Xác nhận mật khẩu mới',
-                        hintStyle: TextStyle(color: const Color(0xFF2D3142).withOpacity(0.4), fontSize: 14, fontWeight: FontWeight.normal),
+                        hintStyle: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.4), fontSize: 14, fontWeight: FontWeight.normal),
                         prefixIcon: const Icon(Icons.lock_rounded, color: Color(0xFF6C63FF)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -264,7 +263,7 @@ class _SetupPasswordScreenState extends State<SetupPasswordScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
-                        BoxShadow(color: const Color(0xFF6C63FF).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8)),
+                        BoxShadow(color: const Color(0xFF6C63FF).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
                       ],
                     ),
                     child: ElevatedButton(

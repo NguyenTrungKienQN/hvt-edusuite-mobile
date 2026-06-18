@@ -8,6 +8,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # State Management & DI
   flutter_riverpod: ^2.4.9
@@ -32,7 +34,12 @@ dependencies:
   # UI & Icons
   cupertino_icons: ^1.0.6
   google_fonts: ^6.1.0
-  intl: ^0.18.1
+  intl: ^0.20.2
+  fluttertoast: ^9.1.0
+  speech_to_text: ^7.4.0
+  flutter_tts: ^4.2.5
+  flutter_markdown: ^0.7.7+1
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
@@ -40,8 +47,29 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   riverpod_generator: ^2.3.9
   build_runner: ^2.4.8
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
   assets:
     - assets/logo.png
+    - assets/appicon.png
+    - assets/linhthu.png
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/appicon.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/appicon.png"
+    background_color: "#ffffff"
+    theme_color: "#6C63FF"
+  windows:
+    generate: true
+    image_path: "assets/appicon.png"
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: "assets/appicon.png"

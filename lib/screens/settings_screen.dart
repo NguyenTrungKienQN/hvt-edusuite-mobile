@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 
+import 'package:fluttertoast/fluttertoast.dart';
+
 class SettingsScreen extends StatefulWidget {
   final String role; // 'parent' or 'teacher'
   final dynamic data; // StudentModel (if parent) or UserModel (if teacher)
@@ -63,9 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await authService.setBiometricEnabled(true);
         if (mounted) {
           setState(() => _biometricEnabled = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Đã kích hoạt đăng nhập bằng vân tay/khuôn mặt.')),
-          );
+          Fluttertoast.showToast(msg: '✅ Đã kích hoạt đăng nhập bằng vân tay/khuôn mặt.', backgroundColor: Colors.green);
         }
       } else {
         // Prompt for password
@@ -76,9 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           await authService.setBiometricEnabled(true);
           if (mounted) {
             setState(() => _biometricEnabled = true);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('✅ Đã kích hoạt đăng nhập bằng vân tay/khuôn mặt.')),
-            );
+            Fluttertoast.showToast(msg: '✅ Đã kích hoạt đăng nhập bằng vân tay/khuôn mặt.', backgroundColor: Colors.green);
           }
         } else {
           if (mounted) {
@@ -91,9 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await authService.deleteSavedPassword();
       if (mounted) {
         setState(() => _biometricEnabled = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ Đã tắt đăng nhập bằng vân tay/khuôn mặt.')),
-        );
+        Fluttertoast.showToast(msg: '❌ Đã tắt đăng nhập bằng vân tay/khuôn mặt.', backgroundColor: Colors.grey);
       }
     }
   }
@@ -193,6 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
 
                       if (response.statusCode == 200 || response.statusCode == 201) {
+                        if (!context.mounted) return;
                         Navigator.pop(context, passwordController.text);
                       } else {
                         setDialogState(() {
@@ -221,13 +218,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-    passwordController.dispose();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      passwordController.dispose();
+    });
     return result;
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = const Color(0xFF6C63FF);
+    const Color primaryColor = Color(0xFF6C63FF);
 
     // Dynamic fields based on role
     final String displayName = widget.role == 'parent'
@@ -249,14 +248,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [primaryColor, const Color(0xFF8A84FF)],
+                gradient: const LinearGradient(
+                  colors: [primaryColor, Color(0xFF8A84FF)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
-                  BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))
+                  BoxShadow(color: primaryColor.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))
                 ],
               ),
               child: Column(
@@ -279,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                     ),
                   ),
                 ],
@@ -301,7 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4))
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 16, offset: const Offset(0, 4))
                   ],
                 ),
                 child: Column(
@@ -331,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4))
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 16, offset: const Offset(0, 4))
                   ],
                 ),
                 padding: const EdgeInsets.all(20),
@@ -340,10 +339,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1),
+                        color: primaryColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.fingerprint_rounded, color: primaryColor, size: 28),
+                      child: const Icon(Icons.fingerprint_rounded, color: primaryColor, size: 28),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -364,7 +363,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     Switch.adaptive(
                       value: _biometricEnabled,
-                      activeColor: primaryColor,
+                      activeThumbColor: primaryColor,
+                      activeTrackColor: primaryColor.withValues(alpha: 0.5),
                       onChanged: _toggleBiometric,
                     )
                   ],
@@ -384,7 +384,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4))
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 16, offset: const Offset(0, 4))
                 ],
               ),
               child: Column(
@@ -486,7 +486,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4))
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 16, offset: const Offset(0, 4))
                 ],
               ),
               padding: const EdgeInsets.all(20),
@@ -740,14 +740,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
 
-    oldPasswordController.dispose();
-    newPasswordController.dispose();
-    confirmPasswordController.dispose();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      oldPasswordController.dispose();
+      newPasswordController.dispose();
+      confirmPasswordController.dispose();
+    });
 
     if (success == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Đổi mật khẩu thành công.')),
-      );
+      Fluttertoast.showToast(msg: '✅ Đổi mật khẩu thành công.', backgroundColor: Colors.green);
     }
   }
 
@@ -824,6 +824,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     try {
                       final response = await apiService.updateParentName(controller.text.trim());
                       if (response.statusCode == 200 || response.statusCode == 201) {
+                        if (!context.mounted) return;
                         Navigator.pop(context, controller.text.trim());
                       } else {
                         setDialogState(() {
@@ -852,14 +853,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-    controller.dispose();
+    // Defer disposal to ensure the dialog's exit animation completes
+    // without the TextFormField trying to read a disposed controller when the keyboard hides.
+    Future.delayed(const Duration(milliseconds: 500), () {
+      controller.dispose();
+    });
 
     if (newName != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Cập nhật họ tên thành công')),
-      );
-      if (widget.onReload != null) {
-        widget.onReload!();
+      setState(() {
+        _parentName = newName;
+      });
+      Fluttertoast.showToast(msg: '✅ Cập nhật họ tên thành công', backgroundColor: Colors.green);
+      if (widget.onParentNameChanged != null) {
+        widget.onParentNameChanged!(newName);
       }
     }
   }

@@ -111,7 +111,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.notifications_off_rounded, size: 80, color: Colors.grey.withOpacity(0.3)),
+                              Icon(Icons.notifications_off_rounded, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
                               const SizedBox(height: 16),
                               const Text(
                                 'Không có thông báo nào',
@@ -139,7 +139,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.02),
+                                      color: Colors.black.withValues(alpha: 0.02),
                                       blurRadius: 16,
                                       offset: const Offset(0, 4),
                                     )
@@ -154,7 +154,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(10),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF6C63FF).withOpacity(0.1),
+                                            color: const Color(0xFF6C63FF).withValues(alpha: 0.1),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(Icons.notifications_active_rounded, color: Color(0xFF6C63FF), size: 20),
@@ -171,7 +171,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     const SizedBox(height: 12),
                                     Text(
                                       body,
-                                      style: TextStyle(fontSize: 14, color: const Color(0xFF2D3142).withOpacity(0.8), height: 1.5),
+                                      style: TextStyle(fontSize: 14, color: const Color(0xFF2D3142).withValues(alpha: 0.8), height: 1.5),
                                     ),
                                     if (timestamp != null) ...[
                                       const SizedBox(height: 12),

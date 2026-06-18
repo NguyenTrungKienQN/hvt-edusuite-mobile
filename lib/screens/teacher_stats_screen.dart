@@ -110,7 +110,7 @@ class _TeacherStatsScreenState extends State<TeacherStatsScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
               padding: const EdgeInsets.all(4),
@@ -135,7 +135,7 @@ class _TeacherStatsScreenState extends State<TeacherStatsScreen> {
                           'Buổi Sáng',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: _selectedBuoi == 'sang' ? Colors.white : const Color(0xFF2D3142).withOpacity(0.6),
+                            color: _selectedBuoi == 'sang' ? Colors.white : const Color(0xFF2D3142).withValues(alpha: 0.6),
                           ),
                         ),
                       ),
@@ -160,7 +160,7 @@ class _TeacherStatsScreenState extends State<TeacherStatsScreen> {
                           'Buổi Chiều',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: _selectedBuoi == 'chieu' ? Colors.white : const Color(0xFF2D3142).withOpacity(0.6),
+                            color: _selectedBuoi == 'chieu' ? Colors.white : const Color(0xFF2D3142).withValues(alpha: 0.6),
                           ),
                         ),
                       ),
@@ -222,7 +222,7 @@ class _TeacherStatsScreenState extends State<TeacherStatsScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10, offset: const Offset(0, 4))
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 10, offset: const Offset(0, 4))
                       ],
                     ),
                     child: Row(
@@ -277,7 +277,7 @@ class _TeacherStatsScreenState extends State<TeacherStatsScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10, offset: const Offset(0, 4))
+          BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 10, offset: const Offset(0, 4))
         ],
       ),
       child: Column(

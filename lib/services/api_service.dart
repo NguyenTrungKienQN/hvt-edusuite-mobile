@@ -9,6 +9,14 @@ class ApiService {
 
   ApiService() : _dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 10))) {
     _dio.options.baseUrl = _baseUrl;
+    _dio.interceptors.add(InterceptorsWrapper(
+      onResponse: (response, handler) {
+        if (response.data is Map && response.data.containsKey('data')) {
+          response.data = response.data['data'];
+        }
+        return handler.next(response);
+      },
+    ));
   }
 
   void setBaseUrl(String newUrl) {
@@ -32,7 +40,7 @@ class ApiService {
     required String identifier,
     required String password,
   }) async {
-    return await _dio.post('/api/auth/mobile/login', data: {
+    return await _dio.post('/api/v1/auth/mobile/login', data: {
       'role': role,
       'identifier': identifier,
       'password': password,
@@ -45,7 +53,7 @@ class ApiService {
     required String newPassword,
     String? tenPhuHuynh,
   }) async {
-    return await _dio.post('/api/auth/mobile/setup-password', data: {
+    return await _dio.post('/api/v1/auth/setup-password', data: {
       'uid_the': uidThe,
       'new_password': newPassword,
       'ten_phu_huynh': tenPhuHuynh,
@@ -58,8 +66,8 @@ class ApiService {
     required String newPassword,
   }) async {
     return await _dio.post(
-      '/api/auth/mobile/change-password',
-      queryParameters: {
+      '/api/v1/auth/change-password',
+      data: {
         'old_password': oldPassword,
         'new_password': newPassword,
       },
@@ -68,23 +76,23 @@ class ApiService {
 
   // 4. Get Current Profile (Me)
   Future<Response> getProfile() async {
-    return await _dio.get('/api/auth/mobile/me');
+    return await _dio.get('/api/v1/auth/me');
   }
 
   // 5. Get Student Attendance History (Parent)
   Future<Response> getStudentAttendance(String uidThe) async {
-    return await _dio.get('/api/student/$uidThe/attendance');
+    return await _dio.get('/api/v1/students/$uidThe/attendance');
   }
 
   // 6. Get Class Weekly Schedule (Parent/Teacher)
   Future<Response> getWeekSchedule(String lop, String username) async {
-    return await _dio.get('/api/schedule/$lop/week');
+    return await _dio.get('/api/v1/schedule/$lop/week');
   }
 
   // Update Class Weekly Schedule (Teacher)
   Future<Response> setWeekSchedule(String lop, Map<String, Map<String, int>> week) async {
     return await _dio.put(
-      '/api/schedule/$lop/week',
+      '/api/v1/schedule/$lop/week',
       data: {
         'hieu_luc_tu': DateTime.now().toIso8601String().substring(0, 10),
         'week': week,
@@ -95,19 +103,19 @@ class ApiService {
   // 7. Get Class Attendance Today (Teacher)
   Future<Response> getAttendanceToday(String lop, String buoi, String username) async {
     return await _dio.get(
-      '/api/class/$lop/attendance_today',
+      '/api/v1/classes/$lop/attendance',
       queryParameters: {'buoi': buoi},
     );
   }
 
   // 8. Get Class Students List (Teacher)
   Future<Response> getStudentsByClass(String lop, String username) async {
-    return await _dio.get('/api/class/$lop/students');
+    return await _dio.get('/api/v1/classes/$lop/mobile-students');
   }
 
   // 9. Get Attendance Pause History (Teacher)
   Future<Response> getPauseAttendance(String username) async {
-    return await _dio.get('/api/attendance/pause');
+    return await _dio.get('/api/v1/attendance/pauses');
   }
 
   // 10. Create Attendance Pause (Teacher)
@@ -118,7 +126,7 @@ class ApiService {
     required String username,
   }) async {
     return await _dio.post(
-      '/api/attendance/pause',
+      '/api/v1/attendance/pauses',
       data: {
         'tu_ngay': tuNgay,
         'den_ngay': denNgay,
@@ -129,13 +137,13 @@ class ApiService {
 
   // 11. Delete Attendance Pause (Teacher)
   Future<Response> deletePauseAttendance(int pauseId, String username) async {
-    return await _dio.delete('/api/attendance/pause/$pauseId');
+    return await _dio.delete('/api/v1/attendance/pauses/$pauseId');
   }
 
   // 12. Send message to AI Chat Assistant
   Future<Response> sendChatMessage(String message, List<Map<String, String>> history) async {
     return await _dio.post(
-      '/api/ai/chat',
+      '/api/v1/ai/chat',
       data: {
         'message': message,
         'history': history,
@@ -146,7 +154,7 @@ class ApiService {
   // 13. Create Telegram GVCN Link Code (Teacher)
   Future<Response> createTelegramLinkCode(String lop) async {
     return await _dio.post(
-      '/api/telegram/gvcn/create_code',
+      '/api/v1/telegram/gvcn/create_code',
       queryParameters: {'lop': lop},
     );
   }
@@ -154,7 +162,7 @@ class ApiService {
   // 14. Register FCM Token (Parent/Teacher)
   Future<Response> registerFCMToken(String token, String deviceType) async {
     return await _dio.post(
-      '/api/auth/mobile/fcm_token',
+      '/api/v1/auth/fcm-token',
       data: {
         'token': token,
         'device_type': deviceType,
@@ -164,8 +172,8 @@ class ApiService {
 
   // 15. Update Parent Name (Parent)
   Future<Response> updateParentName(String tenPhuHuynh) async {
-    return await _dio.post(
-      '/api/auth/mobile/update-parent-name',
+    return await _dio.put(
+      '/api/v1/auth/parent-name',
       data: {
         'ten_phu_huynh': tenPhuHuynh,
       },

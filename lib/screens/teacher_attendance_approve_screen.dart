@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class TeacherAttendanceApproveScreen extends StatefulWidget {
   final dynamic user;
@@ -47,15 +48,13 @@ class _TeacherAttendanceApproveScreenState extends State<TeacherAttendanceApprov
     try {
       final res = await apiService.deletePauseAttendance(id, widget.user.username);
       if (res.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Xóa lịch tạm dừng thành công')),
-        );
+        if (!mounted) return;
+        Fluttertoast.showToast(msg: 'Xóa lịch tạm dừng thành công', backgroundColor: Colors.green);
         _fetchPauses();
       }
     } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể xóa. Vui lòng thử lại.')),
-      );
+      if (!mounted) return;
+      Fluttertoast.showToast(msg: 'Không thể xóa. Vui lòng thử lại.', backgroundColor: Colors.red);
     }
   }
 
@@ -132,9 +131,7 @@ class _TeacherAttendanceApproveScreenState extends State<TeacherAttendanceApprov
             ElevatedButton(
               onPressed: () async {
                 if (tuNgayController.text.isEmpty || lyDoController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
-                  );
+                  Fluttertoast.showToast(msg: 'Vui lòng nhập đầy đủ thông tin', backgroundColor: Colors.orange);
                   return;
                 }
                 Navigator.pop(context);
@@ -149,9 +146,8 @@ class _TeacherAttendanceApproveScreenState extends State<TeacherAttendanceApprov
                   _fetchPauses();
                 } catch (_) {
                   setState(() => _isLoading = false);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Không thể tạo lịch tạm dừng')),
-                  );
+                  if (!context.mounted) return;
+                  Fluttertoast.showToast(msg: 'Không thể tạo lịch tạm dừng', backgroundColor: Colors.red);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -222,7 +218,7 @@ class _TeacherAttendanceApproveScreenState extends State<TeacherAttendanceApprov
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
+                                color: Colors.black.withValues(alpha: 0.02),
                                 blurRadius: 16,
                                 offset: const Offset(0, 4),
                               )
