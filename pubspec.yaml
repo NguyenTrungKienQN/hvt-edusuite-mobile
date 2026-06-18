@@ -40,6 +40,12 @@ dependencies:
   flutter_tts: ^4.2.5
   flutter_markdown: ^0.7.7+1
   cached_network_image: ^3.4.1
+  
+  # Gemini Live Streaming
+  web_socket_channel: ^3.0.1
+  record: ^5.0.5
+  sound_stream: ^0.3.0
+  lottie: ^3.1.2
 
 dev_dependencies:
   flutter_test:

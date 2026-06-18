@@ -8,6 +8,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import 'ai_live_screen.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
   final String role; // 'parent' or 'teacher'
@@ -1049,6 +1050,19 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
                 size: 26
               ),
               onPressed: _listen,
+            ),
+          if (!hasText)
+            IconButton(
+              icon: const Icon(
+                Icons.auto_awesome_rounded, 
+                color: Color(0xFF8B5CF6), 
+                size: 26
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const AiLiveScreen()),
+                );
+              },
             ),
           const SizedBox(width: 6),
           GestureDetector(
