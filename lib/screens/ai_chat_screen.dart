@@ -1051,33 +1051,28 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
               ),
               onPressed: _listen,
             ),
-          if (!hasText)
-            IconButton(
-              icon: const Icon(
-                Icons.auto_awesome_rounded, 
-                color: Color(0xFF8B5CF6), 
-                size: 26
-              ),
-              onPressed: () {
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: () {
+              if (hasText) {
+                _sendMessage();
+              } else {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const AiLiveScreen()),
                 );
-              },
-            ),
-          const SizedBox(width: 6),
-          GestureDetector(
-            onTap: _sendMessage,
+              }
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: hasText ? const Color(0xFF1A73E8) : const Color(0xFFD3E3FD),
+                color: hasText ? const Color(0xFF1A73E8) : const Color(0xFFEDE8FF),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                hasText ? Icons.send_rounded : Icons.graphic_eq_rounded,
-                color: hasText ? Colors.white : const Color(0xFF041E49),
+                hasText ? Icons.send_rounded : Icons.auto_awesome_rounded,
+                color: hasText ? Colors.white : const Color(0xFF8B5CF6),
                 size: 24,
               ),
             ),
@@ -1109,31 +1104,35 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: iconBgColor,
-            shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          leading: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          child: Icon(icon, color: iconColor, size: 20),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFF2D3142),
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF2D3142),
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
           ),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(color: Colors.grey[500], fontSize: 12),
+          ),
+          trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+          onTap: () => _startChatWithTemplate(prompt),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: Colors.grey[500], fontSize: 12),
-        ),
-        trailing: Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
-        onTap: () => _startChatWithTemplate(prompt),
       ),
     );
   }

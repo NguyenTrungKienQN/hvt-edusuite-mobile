@@ -43,7 +43,7 @@ dependencies:
   
   # Gemini Live Streaming
   web_socket_channel: ^3.0.1
-  record: ^5.0.5
+  record: ^7.1.0
   sound_stream: ^0.3.0
   lottie: ^3.1.2
 
@@ -79,3 +79,4 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "assets/appicon.png"
+
