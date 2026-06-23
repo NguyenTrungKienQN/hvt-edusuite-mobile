@@ -23,6 +23,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
   bool _hasSavedAccount = false;
   String? _errorMessage;
+  
+  // Fauget Theme Primary Color
+  final Color _primaryColor = const Color(0xFF7943FA);
 
   @override
   void initState() {
@@ -113,123 +116,118 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    
     return Scaffold(
-      backgroundColor: const Color(0xFFE2E8F4), // Base fallback
-      body: Stack(
-        children: [
-          // 1. Soft Pastel Gradient Background
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: screenHeight * 0.4,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFE6E6FA), // Light lavender
-                    Color(0xFFE0E7FF), // Pale blue
-                  ],
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Logo
+              Hero(
+                tag: 'logo',
+                child: Image.asset('assets/logo.png', height: 36),
+              ),
+              const SizedBox(height: 32),
+
+              // 2. Greeting Texts
+              const Text(
+                'Xin chào!',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3142),
                 ),
               ),
-            ),
-          ),
-          
-          // 2. Centered Branding Header
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: screenHeight * 0.32,
-            child: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+              const SizedBox(height: 8),
+              const Text(
+                'Chào mừng đến với HVT EduSuite',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3142),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Vui lòng đăng nhập để tiếp tục.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: const Color(0xFF2D3142).withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // 3. Illustration
+              Center(
+                child: Image.asset(
+                  'assets/Resources/1.png',
+                  height: 220,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Error Message
+              if (_errorMessage != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF0F0),
+                    border: Border.all(color: const Color(0xFFFF6584).withValues(alpha: 0.5), width: 1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
                     children: [
-                      Hero(
-                        tag: 'logo',
-                        child: Image.asset('assets/logo.png', height: 60),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Hệ thống Điểm danh & Liên lạc Nhà trường',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: const Color(0xFF2D3142).withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w500,
+                      const Icon(Icons.error_outline_rounded, color: Color(0xFFFF6584), size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Color(0xFFFF6584), fontSize: 13, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ),
-          ),
-          
-          // 3. Bottom White Sheet
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Dynamically occupy roughly 65-75% of screen height
-                final sheetHeight = screenHeight * 0.68;
-                return Container(
-                  height: sheetHeight,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x08000000), // Extremely soft shadow
-                        blurRadius: 40,
-                        offset: Offset(0, -10),
-                      )
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 32.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+
+              // 4. Role Toggle
+              _buildRoleToggle(),
+              const SizedBox(height: 24),
+
+              // 5. Login Form
+              _buildLoginForm(),
+              const SizedBox(height: 24),
+
+              // 6. Setup Password Footer
+              if (_isParent)
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const SetupPasswordScreen()));
+                    },
+                    child: RichText(
+                      text: TextSpan(
+                        text: 'Phụ huynh chưa có mật khẩu? ',
+                        style: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.6), fontSize: 14),
                         children: [
-                          _buildRoleToggle(),
-                          const SizedBox(height: 32),
-                          
-                          if (_errorMessage != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                              margin: const EdgeInsets.only(bottom: 24),
-                              decoration: BoxDecoration(
-                                color: const Color(0x33FF6584),
-                                border: Border.all(color: const Color(0xFFFF6584), width: 0.5),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: Color(0xFFFF6584), fontSize: 13),
-                              ),
-                            ),
-                            
-                          _buildLoginForm(),
-                          const SizedBox(height: 32),
-                          _buildDemoMode(),
+                          TextSpan(
+                            text: 'Thiết lập ngay',
+                            style: TextStyle(color: _primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                );
-              }
-            ),
+                ),
+
+              const SizedBox(height: 32),
+              _buildDemoMode(),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -238,10 +236,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Stack(
       children: [
         Container(
-          height: 52,
+          height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFFF4F7FC),
-            borderRadius: BorderRadius.circular(26),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
           ),
           padding: const EdgeInsets.all(4),
           child: LayoutBuilder(
@@ -258,15 +257,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     width: tabWidth,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        color: _primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
@@ -280,9 +272,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             child: AnimatedDefaultTextStyle(
                               duration: const Duration(milliseconds: 200),
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 fontSize: 14,
-                                color: _isParent ? const Color(0xFF1F2232) : const Color(0xFF2D3142).withValues(alpha: 0.5),
+                                color: _isParent ? _primaryColor : const Color(0xFF2D3142).withValues(alpha: 0.5),
                               ),
                               child: const Text('Phụ Huynh'),
                             ),
@@ -297,9 +289,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             child: AnimatedDefaultTextStyle(
                               duration: const Duration(milliseconds: 200),
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 fontSize: 14,
-                                color: !_isParent ? const Color(0xFF1F2232) : const Color(0xFF2D3142).withValues(alpha: 0.5),
+                                color: !_isParent ? _primaryColor : const Color(0xFF2D3142).withValues(alpha: 0.5),
                               ),
                               child: const Text('Giáo Viên'),
                             ),
@@ -317,8 +309,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(26),
+                color: Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
@@ -332,17 +324,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // User Input
-          Text(
-            _isParent ? 'Mã thẻ / Tên đăng nhập' : 'Tên đăng nhập',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1F2232)),
-          ),
-          const SizedBox(height: 8),
+          // Input 1: ID
           _buildInputField(
             controller: _idController,
             readOnly: _hasSavedAccount,
-            hintText: _isParent ? 'VD: 04E2D3B2' : 'Nhập tài khoản giáo viên',
-            icon: _isParent ? Icons.badge_outlined : Icons.person_outline,
+            hintText: _isParent ? 'Mã thẻ / Số điện thoại' : 'Tên đăng nhập',
             validator: (val) {
               if (val == null || val.trim().isEmpty) {
                 return _isParent ? 'Vui lòng nhập mã thẻ' : 'Vui lòng nhập tên đăng nhập';
@@ -350,37 +336,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               return null;
             },
           ),
-          
-          if (_hasSavedAccount)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: _switchAccount,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF6C63FF)),
-                label: const Text(
-                  'Đăng nhập tài khoản khác',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF6C63FF)),
-                ),
-              ),
-            )
-          else
-            const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Password Input
-          const Text(
-            'Mật khẩu',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1F2232)),
-          ),
-          const SizedBox(height: 8),
+          // Input 2: Password
           _buildInputField(
             controller: _passwordController,
-            hintText: 'Nhập mật khẩu',
-            icon: Icons.lock_outline_rounded,
+            hintText: 'Mật khẩu',
             obscureText: _obscurePassword,
             suffixIcon: IconButton(
               icon: Icon(
@@ -397,100 +358,92 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               return null;
             },
           ),
-          
-          // Forgot Password
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.only(top: 8, bottom: 24),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                'Quên mật khẩu?',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF2D3142).withValues(alpha: 0.5),
-                ),
-              ),
-            ),
-          ),
-          
-          // Login Button
+          const SizedBox(height: 12),
+
+          // Remember Me (Biometrics) & Forgot Password Row
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6C63FF).withValues(alpha: 0.3), 
-                        blurRadius: 15, 
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      disabledBackgroundColor: const Color(0x806C63FF),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text(
-                            'Đăng Nhập',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              // Biometrics replace "Remember Me" if available/enabled
+              if (_showBiometricBtn)
+                InkWell(
+                  onTap: _isLoading ? null : _handleBiometricLogin,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fingerprint_rounded, color: _primaryColor, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Đăng nhập vân tay',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF2D3142).withValues(alpha: 0.7),
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (_hasSavedAccount)
+                TextButton.icon(
+                  onPressed: _switchAccount,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  icon: Icon(Icons.swap_horiz_rounded, size: 18, color: _primaryColor),
+                  label: Text(
+                    'Đổi tài khoản',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _primaryColor),
+                  ),
+                )
+              else
+                const SizedBox(), // Empty space for alignment
+
+              TextButton(
+                onPressed: () {},
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'Quên mật khẩu?',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF2D3142).withValues(alpha: 0.6),
                   ),
                 ),
               ),
-              if (_showBiometricBtn) ...[
-                const SizedBox(width: 16),
-                Container(
-                  height: 56,
-                  width: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
-                  ),
-                  child: InkWell(
-                    onTap: _isLoading ? null : _handleBiometricLogin,
-                    borderRadius: BorderRadius.circular(28),
-                    child: const Center(
-                      child: Icon(Icons.fingerprint_rounded, size: 28, color: Color(0xFF6C63FF)),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
-          
-          // Setup First Password
-          if (_isParent)
-            Padding(
-              padding: const EdgeInsets.only(top: 24),
-              child: Align(
-                alignment: Alignment.center,
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SetupPasswordScreen()));
-                  },
-                  child: const Text(
-                    'Thiết lập mật khẩu phụ huynh lần đầu?',
-                    style: TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                ),
+          const SizedBox(height: 24),
+
+          // SIGN IN Button
+          SizedBox(
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _handleLogin,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryColor,
+                disabledBackgroundColor: _primaryColor.withValues(alpha: 0.5),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+              child: _isLoading
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text(
+                      'ĐĂNG NHẬP',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.0),
+                    ),
             ),
+          ),
         ],
       ),
     );
@@ -499,7 +452,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildInputField({
     required TextEditingController controller,
     required String hintText,
-    required IconData icon,
     bool obscureText = false,
     bool readOnly = false,
     Widget? suffixIcon,
@@ -508,24 +460,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.2),
+        borderRadius: BorderRadius.circular(12),
+        // Extremely subtle shadow matching the design
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
         readOnly: readOnly,
-        style: TextStyle(color: readOnly ? Colors.grey : const Color(0xFF1F2232), fontWeight: FontWeight.w500, fontSize: 15),
+        style: TextStyle(
+          color: readOnly ? Colors.grey : const Color(0xFF2D3142), 
+          fontWeight: FontWeight.w500, 
+          fontSize: 15
+        ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.4), fontSize: 15, fontWeight: FontWeight.normal),
-          prefixIcon: Icon(icon, color: const Color(0xFF2D3142).withValues(alpha: 0.4), size: 22),
+          hintStyle: TextStyle(
+            color: const Color(0xFF2D3142).withValues(alpha: 0.4), 
+            fontSize: 15, 
+            fontWeight: FontWeight.normal
+          ),
           suffixIcon: suffixIcon,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-          contentPadding: const EdgeInsets.symmetric(vertical: 18),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12), 
+            borderSide: BorderSide.none,
+          ),
+          // Slight padding to match the exact aesthetic of Fauget inputs
+          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
         ),
         validator: validator,
       ),
@@ -543,50 +510,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Hoặc thử nghiệm với',
-                style: TextStyle(fontSize: 12, color: const Color(0xFF2D3142).withValues(alpha: 0.4), fontWeight: FontWeight.w500),
+                'Demo Mode',
+                style: TextStyle(
+                  fontSize: 12, 
+                  color: const Color(0xFF2D3142).withValues(alpha: 0.4), 
+                  fontWeight: FontWeight.w500
+                ),
               ),
             ),
             Expanded(child: Divider(color: Colors.grey.withValues(alpha: 0.2))),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => ref.read(authProvider.notifier).loginDemo('parent'),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: const Color(0xFF2D3142).withValues(alpha: 0.1), width: 1),
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  elevation: 0,
-                ),
-                icon: Icon(Icons.people_alt_outlined, color: const Color(0xFF2D3142).withValues(alpha: 0.6), size: 18),
-                label: Text(
-                  'Demo Phụ Huynh',
-                  style: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-              ),
+            TextButton(
+              onPressed: () => ref.read(authProvider.notifier).loginDemo('parent'),
+              child: Text('Phụ Huynh', style: TextStyle(color: _primaryColor, fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => ref.read(authProvider.notifier).loginDemo('teacher'),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: const Color(0xFF2D3142).withValues(alpha: 0.1), width: 1),
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  elevation: 0,
-                ),
-                icon: Icon(Icons.school_outlined, color: const Color(0xFF2D3142).withValues(alpha: 0.6), size: 18),
-                label: Text(
-                  'Demo Giáo Viên',
-                  style: TextStyle(color: const Color(0xFF2D3142).withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-              ),
+            const SizedBox(width: 16),
+            TextButton(
+              onPressed: () => ref.read(authProvider.notifier).loginDemo('teacher'),
+              child: Text('Giáo Viên', style: TextStyle(color: _primaryColor, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -594,3 +540,5 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
+
+// Make from Kiên and Dương with love

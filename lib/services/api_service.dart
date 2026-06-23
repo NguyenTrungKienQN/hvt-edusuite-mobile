@@ -109,8 +109,18 @@ class ApiService {
   }
 
   // 8. Get Class Students List (Teacher)
-  Future<Response> getStudentsByClass(String lop, String username) async {
+  Future<Response> getStudentsByClass(String lop, {String? username}) async {
     return await _dio.get('/api/v1/classes/$lop/mobile-students');
+  }
+
+  // 8.1. Get Homeroom Teacher
+  Future<Response> getHomeroomTeacher(String lop) async {
+    return await _dio.get('/api/v1/classes/$lop/homeroom');
+  }
+
+  // 8.2. Get Student Detail
+  Future<Response> getStudentDetail(String uid) async {
+    return await _dio.get('/api/v1/students/$uid');
   }
 
   // 9. Get Attendance Pause History (Teacher)
@@ -179,7 +189,87 @@ class ApiService {
       },
     );
   }
+
+  // --- EVENTS API ---
+
+  // Get all classes
+  Future<Response> getClasses() async {
+    return await _dio.get('/api/v1/classes');
+  }
+
+  // Get all students (Global Admin & Pagination support)
+  Future<Response> getStudents({int page = 1, int pageSize = 50, String? lop, String? q}) async {
+    Map<String, dynamic> params = {
+      'page': page,
+      'page_size': pageSize,
+    };
+    if (lop != null && lop.isNotEmpty) params['lop'] = lop;
+    if (q != null && q.isNotEmpty) params['q'] = q;
+    return await _dio.get('/api/v1/students', queryParameters: params);
+  }
+
+  // Get list of events (with optional filters)
+  Future<Response> getEvents({String? lop, String? fromDate, String? toDate}) async {
+    Map<String, dynamic> params = {};
+    if (lop != null && lop.isNotEmpty) params['lop'] = lop;
+    if (fromDate != null) params['from_date'] = fromDate;
+    if (toDate != null) params['to_date'] = toDate;
+    return await _dio.get('/api/v1/events', queryParameters: params);
+  }
+
+  // Get active events
+  Future<Response> getActiveEvents() async {
+    return await _dio.get('/api/v1/events/active');
+  }
+
+  // Get event details
+  Future<Response> getEventDetail(int eventId) async {
+    return await _dio.get('/api/v1/events/$eventId');
+  }
+
+  // Create event
+  Future<Response> createEvent(Map<String, dynamic> eventData) async {
+    return await _dio.post('/api/v1/events', data: eventData);
+  }
+
+  // Update event
+  Future<Response> updateEvent(int eventId, Map<String, dynamic> eventData) async {
+    return await _dio.put('/api/v1/events/$eventId', data: eventData);
+  }
+
+  // Delete event
+  Future<Response> deleteEvent(int eventId) async {
+    return await _dio.delete('/api/v1/events/$eventId');
+  }
+
+  // Scan attendance via UID
+  Future<Response> scanEventAttendance(int eventId, String uidThe) async {
+    return await _dio.post(
+      '/api/v1/events/$eventId/scan',
+      data: {'uid_the': uidThe},
+    );
+  }
+
+  // Auto scan attendance
+  Future<Response> autoScanEventAttendance() async {
+    return await _dio.post('/api/v1/events/scan_auto');
+  }
+
+  // Get event attendance list
+  Future<Response> getEventAttendance(int eventId) async {
+    return await _dio.get('/api/v1/events/$eventId/attendance');
+  }
+
+  // Add event participants manually
+  Future<Response> addEventParticipants(int eventId, List<String> uids) async {
+    return await _dio.post(
+      '/api/v1/events/$eventId/participants',
+      data: uids,
+    );
+  }
 }
 
 // Single instance for global app usage
 final apiService = ApiService();
+
+// Make from Kiên and Dương with love

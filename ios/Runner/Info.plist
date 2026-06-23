@@ -74,5 +74,10 @@
 	<string>Ứng dụng cần quyền truy cập micrô để ghi âm giọng nói của bạn.</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.education</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

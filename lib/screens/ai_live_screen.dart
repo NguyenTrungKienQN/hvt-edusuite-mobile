@@ -565,3 +565,5 @@ class _AmbientGlowPainter extends CustomPainter {
         old.amplitude != amplitude;
   }
 }
+
+// Make from Kiên and Dương with love

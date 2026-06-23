@@ -4,8 +4,9 @@ import '../services/api_service.dart';
 
 class TeacherClassStudentsScreen extends StatefulWidget {
   final dynamic user;
+  final String? lop;
 
-  const TeacherClassStudentsScreen({super.key, required this.user});
+  const TeacherClassStudentsScreen({super.key, required this.user, this.lop});
 
   @override
   State<TeacherClassStudentsScreen> createState() => _TeacherClassStudentsScreenState();
@@ -23,39 +24,68 @@ class _TeacherClassStudentsScreenState extends State<TeacherClassStudentsScreen>
   }
 
   Future<void> _fetchStudents() async {
-    final lop = widget.user.lopQuyen;
-    if (lop == null || lop.isEmpty) {
-      setState(() {
-        _error = 'Tài khoản chưa được gán quyền lớp chủ nhiệm';
-        _isLoading = false;
-      });
-      return;
-    }
-
+    final lop = widget.lop ?? widget.user.lopQuyen;
+    
     try {
-      final res = await apiService.getStudentsByClass(lop, widget.user.username);
-      if (res.data != null && res.data['students'] != null) {
-        setState(() {
-          _studentList = res.data['students'];
-          _isLoading = false;
-        });
+      dynamic res;
+      if (lop != null && lop.isNotEmpty) {
+        // Teacher view
+        res = await apiService.getStudentsByClass(lop, username: widget.user.username);
       } else {
+        // Global Admin view (fetch first 50 students as example, real app might add infinite scroll)
+        res = await apiService.getStudents(page: 1, pageSize: 50);
+      }
+      
+      if (res.data != null) {
+        dynamic studentsData;
+        if (res.data is List) {
+          studentsData = res.data;
+        } else if (res.data['students'] != null) {
+          studentsData = res.data['students'];
+        } else if (res.data['items'] != null) {
+          studentsData = res.data['items'];
+        } else if (res.data['data'] != null) {
+          studentsData = res.data['data'];
+        }
+        
+        if (studentsData != null && studentsData is List) {
+          if (mounted) {
+            setState(() {
+              _studentList = studentsData;
+              _isLoading = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _error = 'Không có dữ liệu học sinh';
+              _isLoading = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _error = 'Không thể lấy danh sách học sinh';
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _error = 'Không thể lấy danh sách học sinh';
+          _error = 'Lỗi kết nối máy chủ';
           _isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        _error = 'Lỗi kết nối máy chủ';
-        _isLoading = false;
-      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final lop = widget.user.lopQuyen ?? 'N/A';
+    final lop = widget.lop ?? widget.user.lopQuyen;
+    final isGlobalAdmin = lop == null || lop.isEmpty;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FC),
       appBar: AppBar(
@@ -66,7 +96,7 @@ class _TeacherClassStudentsScreenState extends State<TeacherClassStudentsScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Danh Sách Lớp $lop',
+          isGlobalAdmin ? 'Tất Cả Học Sinh' : 'Danh Sách Lớp $lop',
           style: const TextStyle(color: Color(0xFF2D3142), fontWeight: FontWeight.bold),
         ),
       ),
@@ -82,7 +112,7 @@ class _TeacherClassStudentsScreenState extends State<TeacherClassStudentsScreen>
                           Icon(Icons.people_outline_rounded, size: 64, color: Colors.grey[400]),
                           const SizedBox(height: 16),
                           Text(
-                            'Lớp học chưa có học sinh',
+                            'Chưa có học sinh nào',
                             style: TextStyle(color: Colors.grey[600], fontSize: 16),
                           ),
                         ],
@@ -275,7 +305,6 @@ class _TeacherClassStudentsScreenState extends State<TeacherClassStudentsScreen>
       final date = DateTime.parse(dateString.toString());
       return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
     } catch (e) {
-      // If it's not a valid ISO string, just return it directly (maybe it's already formatted)
       return dateString.toString();
     }
   }
@@ -292,3 +321,5 @@ class _TeacherClassStudentsScreenState extends State<TeacherClassStudentsScreen>
     );
   }
 }
+
+// Make from Kiên and Dương with love

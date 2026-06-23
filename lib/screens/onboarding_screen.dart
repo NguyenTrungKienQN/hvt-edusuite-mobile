@@ -242,7 +242,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void _onVerticalDragEnd(DragEndDetails details) {
     if (_dragOffset == 0) return;
     
-    final screenHeight = MediaQuery.of(context).size.height;
     if (_dragOffset > 150 || details.primaryVelocity! > 300) {
       _completeOnboarding();
     } else {
@@ -574,3 +573,5 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 }
+
+// Make from Kiên and Dương with love

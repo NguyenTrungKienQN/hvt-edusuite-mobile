@@ -4,16 +4,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/parent_attendance_screen.dart';
 import 'screens/teacher_class_students_screen.dart';
+import 'screens/classes_screen.dart';
 import 'screens/teacher_stats_screen.dart';
 import 'screens/ai_chat_screen.dart';
 import 'screens/teacher_telegram_screen.dart';
-import 'screens/schedule_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'services/api_service.dart';
@@ -21,7 +20,8 @@ import 'services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/onboarding_screen.dart';
-
+import 'screens/events_screen.dart';
+import 'firebase_options.dart';
 
 class RestartWidget extends StatefulWidget {
   final Widget child;
@@ -62,7 +62,9 @@ void main() async {
     statusBarBrightness: Brightness.light, // iOS: dark text
   ));
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     await NotificationService.instance.init();
   } catch (e) {
     debugPrint("Firebase init failed: $e");
@@ -108,9 +110,9 @@ class MyApp extends StatelessWidget {
         primaryColor: const Color(0xFF6C63FF),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: <TargetPlatform, PageTransitionsBuilder>{
-            TargetPlatform.android: const CupertinoPageTransitionsBuilder(),
-            TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
-            TargetPlatform.macOS: const CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
           },
         ),
         scaffoldBackgroundColor: const Color(0xFFF4F7FC), // Soft cream/light-blue
@@ -623,20 +625,7 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          _buildQuickActionTile(
-            Icons.calendar_month_rounded,
-            'Thời khóa biểu học tập',
-            'Xem lịch học tập và thời khóa biểu của lớp',
-            const Color(0xFFFF9F43),
-            const Color(0xFFFFF5EC),
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ScheduleScreen(lop: widget.student.lop, role: 'parent'),
-              ),
-            ),
-          ),
+
           const SizedBox(height: 32),
         ],
       ),
@@ -712,7 +701,7 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       _buildHomeView(),
-      TeacherClassStudentsScreen(user: widget.user),
+      widget.user.role == 'admin' ? ClassesScreen(user: widget.user) : TeacherClassStudentsScreen(user: widget.user),
       const NotificationsScreen(),
       const AiChatScreen(role: 'teacher'),
       SettingsScreen(
@@ -890,23 +879,20 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
               ),
             ),
           ),
+
           const SizedBox(height: 16),
           _buildQuickActionTile(
-            Icons.calendar_month_rounded,
-            'Thời khóa biểu & Lịch học',
-            'Xem chi tiết lịch học của lớp',
-            const Color(0xFFFD5E53),
-            const Color(0xFFFFECEB),
+            Icons.event_available_rounded,
+            'Quản lý Sự kiện',
+            'Lên lịch và điểm danh sự kiện trường lớp',
+            const Color(0xFF6C63FF),
+            const Color(0xFFEEECFF),
             () {
               final lop = widget.user.lopQuyen;
-              if (lop == null || lop.isEmpty) {
-                Fluttertoast.showToast(msg: '⚠️ Bạn chưa được phân công lớp chủ nhiệm', backgroundColor: Colors.orange);
-                return;
-              }
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ScheduleScreen(lop: lop, role: 'teacher'),
+                  builder: (_) => EventsScreen(lop: lop?.isEmpty == true ? null : lop),
                 ),
               );
             },
@@ -969,3 +955,4 @@ class _TeacherDashboardState extends ConsumerState<TeacherDashboard> {
 
 }
 
+// Make from Kiên and Dương with love

@@ -234,7 +234,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ? _parentName!
             : 'Phụ huynh em ${widget.data.ten}')
         : widget.data.accountname;
-    final String subHeader = widget.role == 'parent' ? 'Phụ huynh học sinh' : 'Giáo viên chủ nhiệm';
+    final String subHeader = widget.role == 'parent' 
+        ? 'Phụ huynh học sinh' 
+        : (widget.data.role == 'admin' ? 'Ban giám hiệu' : 'Giáo viên chủ nhiệm');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FC),
@@ -311,7 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Divider(height: 24),
                     _buildDetailRow(Icons.assignment_ind_outlined, 'Lớp chủ nhiệm', widget.data.lopQuyen ?? 'Không có'),
                     const Divider(height: 24),
-                    _buildDetailRow(Icons.security_rounded, 'Chức vụ', 'Giáo viên'),
+                    _buildDetailRow(Icons.security_rounded, 'Chức vụ', widget.data.role == 'admin' ? 'Ban giám hiệu' : 'Giáo viên'),
                   ],
                 ),
               ),
@@ -870,3 +872,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 }
+
+// Make from Kiên and Dương with love

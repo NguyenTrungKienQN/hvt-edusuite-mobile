@@ -1137,3 +1137,5 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
     );
   }
 }
+
+// Make from Kiên and Dương with love

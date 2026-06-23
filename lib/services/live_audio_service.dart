@@ -1,13 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:math';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:record/record.dart';
-import 'package:sound_stream/sound_stream.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
@@ -59,14 +56,12 @@ class LiveAudioService {
 
   // Configuration
   static const int _sampleRateInput = 16000;
-  static const int _sampleRateOutput = 24000;
-  
   String get _wsUrl {
     final baseUrl = apiService.baseUrl;
     if (baseUrl.startsWith('https://')) {
-      return baseUrl.replaceFirst('https://', 'wss://') + '/api/v1/ai/live';
+      return '${baseUrl.replaceFirst('https://', 'wss://')}/api/v1/ai/live';
     } else {
-      return baseUrl.replaceFirst('http://', 'ws://') + '/api/v1/ai/live';
+      return '${baseUrl.replaceFirst('http://', 'ws://')}/api/v1/ai/live';
     }
   }
 
@@ -76,40 +71,40 @@ class LiveAudioService {
     try {
       _isMuted = false;
       _setState(LiveSessionState.connecting);
-      print("DEBUG: Starting Live Session...");
+      debugPrint("DEBUG: Starting Live Session...");
 
       // 2. Setup WebSocket Connection
-      print("DEBUG: Getting access token...");
+      debugPrint("DEBUG: Getting access token...");
       final token = await authService.getToken() ?? '';
       
       final uri = Uri.parse('$_wsUrl?token=$token');
-      print("DEBUG: Connecting to WebSocket $uri...");
+      debugPrint("DEBUG: Connecting to WebSocket $uri...");
       _channel = WebSocketChannel.connect(uri);
       
       try {
-        print("DEBUG: Awaiting WebSocket ready state...");
+        debugPrint("DEBUG: Awaiting WebSocket ready state...");
         await _channel!.ready;
-        print("DEBUG: WebSocket connected successfully!");
+        debugPrint("DEBUG: WebSocket connected successfully!");
       } catch (e) {
-        print("DEBUG: WebSocket connection failed: $e");
-        throw e;
+        debugPrint("DEBUG: WebSocket connection failed: $e");
+        rethrow;
       }
 
       // Listen to incoming WebSocket messages from Gemini
       _wsSub = _channel?.stream.listen((message) {
         _handleIncomingMessage(message);
       }, onError: (error) {
-        print("WebSocket Error: $error");
+        debugPrint("WebSocket Error: $error");
         stopLiveSession();
       }, onDone: () {
-        print("WebSocket Closed");
+        debugPrint("WebSocket Closed");
         stopLiveSession();
       });
 
       // 3. Start Recording Audio (16kHz, 16-bit PCM Mono)
-      print("DEBUG: Checking microphone permission...");
+      debugPrint("DEBUG: Checking microphone permission...");
       if (await _audioRecorder.hasPermission()) {
-        print("DEBUG: Starting audio recorder stream...");
+        debugPrint("DEBUG: Starting audio recorder stream...");
         final recordStream = await _audioRecorder.startStream(
           const RecordConfig(
             encoder: AudioEncoder.pcm16bits,
@@ -135,16 +130,16 @@ class LiveAudioService {
             _channel!.sink.add(data);
           }
         });
-        print("DEBUG: Audio recorder stream started.");
+        debugPrint("DEBUG: Audio recorder stream started.");
       } else {
         throw Exception("Microphone permission denied");
       }
 
       _isLive = true;
       _setState(LiveSessionState.listening);
-      print("DEBUG: Live session fully started.");
+      debugPrint("DEBUG: Live session fully started.");
     } catch (e) {
-      print("Error starting live session: $e");
+      debugPrint("Error starting live session: $e");
       stopLiveSession();
     }
   }
@@ -172,7 +167,7 @@ class LiveAudioService {
           }
         }
       } catch (e) {
-        print("Error parsing Gemini response: $e");
+        debugPrint("Error parsing Gemini response: $e");
       }
     }
   }
@@ -191,7 +186,7 @@ class LiveAudioService {
 
   Future<void> handleAppBackground() async {
     if (!_isLive || _isBackgroundPaused) return;
-    print("DEBUG: App going to background. Suspending microphone...");
+    debugPrint("DEBUG: App going to background. Suspending microphone...");
     _isBackgroundPaused = true;
     
     // Stop recording stream to release microphone
@@ -206,7 +201,7 @@ class LiveAudioService {
 
   Future<void> handleAppForeground() async {
     if (!_isLive || !_isBackgroundPaused) return;
-    print("DEBUG: App returning to foreground. Resuming microphone...");
+    debugPrint("DEBUG: App returning to foreground. Resuming microphone...");
     _isBackgroundPaused = false;
 
     if (!_isMuted) {
@@ -264,3 +259,5 @@ class LiveAudioService {
 
 // Global instance for easy access
 final liveAudioService = LiveAudioService();
+
+// Make from Kiên and Dương with love

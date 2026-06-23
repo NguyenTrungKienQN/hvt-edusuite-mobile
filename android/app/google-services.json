@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "25190735008",
+    "project_id": "hvt-edusuite",
+    "storage_bucket": "hvt-edusuite.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:25190735008:android:968b7073f179412ae6bdc5",
+        "android_client_info": {
+          "package_name": "com.hvt.esm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzW2KXaRtoAszSd-0rzQfCwkCjB1A8MVk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
