@@ -184,12 +184,25 @@ class LiveAudioService {
         if (data.containsKey('serverContent') &&
             data['serverContent']['turnComplete'] == true) {
           debugPrint("DEBUG: Gemini turn complete");
-          // Small delay then switch back to listening
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (_isLive && !_isMuted) {
-              _setState(LiveSessionState.listening);
-            } else if (_isLive && _isMuted) {
-              _setState(LiveSessionState.paused);
+          
+          _turnCompleteToken++;
+          final currentToken = _turnCompleteToken;
+          
+          final now = DateTime.now();
+          int delayMs = _expectedPlaybackEndTime.difference(now).inMilliseconds;
+          if (delayMs < 0) delayMs = 0;
+          
+          // Add a small extra buffer (e.g., 300ms) to ensure the hardware player has truly finished
+          delayMs += 300;
+
+          Future.delayed(Duration(milliseconds: delayMs), () {
+            // Only switch state if this is still the most recent turn complete event
+            if (_isLive && _currentState == LiveSessionState.aiSpeaking && _turnCompleteToken == currentToken) {
+              if (!_isMuted) {
+                _setState(LiveSessionState.listening);
+              } else {
+                _setState(LiveSessionState.paused);
+              }
             }
           });
         }
@@ -199,11 +212,22 @@ class LiveAudioService {
     }
   }
 
+  DateTime _expectedPlaybackEndTime = DateTime.now();
+  int _turnCompleteToken = 0;
   bool _isPlayingAudio = false;
 
   void _playAudioChunk(Uint8List pcmData) {
     if (!_isLive) return;
     _setState(LiveSessionState.aiSpeaking);
+    
+    final now = DateTime.now();
+    if (_expectedPlaybackEndTime.isBefore(now)) {
+      _expectedPlaybackEndTime = now;
+    }
+    
+    // 24000 Hz, 16-bit (2 bytes), Mono = 48000 bytes per second
+    final durationMs = (pcmData.length / 48000.0 * 1000).round();
+    _expectedPlaybackEndTime = _expectedPlaybackEndTime.add(Duration(milliseconds: durationMs));
     
     // Feed audio directly to player
     _feedAudioToPlayer(pcmData);

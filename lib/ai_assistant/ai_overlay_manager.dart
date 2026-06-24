@@ -53,7 +53,7 @@ class _AiOverlayManagerState extends State<AiOverlayManager> with TickerProvider
     );
 
     // Pre-load audio to eliminate disk I/O lag when triggering
-    _audioPlayer.setSource(AssetSource('Resources/AIL.mp3'));
+    _audioPlayer.setSource(AssetSource('Resources/mixkit-software-interface-start-2574.wav'));
 
     aiOverlayController._showOverlayCallback = _showOverlay;
     aiOverlayController._hideOverlayCallback = _hideOverlay;
@@ -70,7 +70,7 @@ class _AiOverlayManagerState extends State<AiOverlayManager> with TickerProvider
       // Stop resets the player state. Play will replay from the beginning.
       // Since it was played/loaded once, it is cached and instant.
       _audioPlayer.stop().then((_) {
-        _audioPlayer.play(AssetSource('Resources/AIL.mp3'));
+        _audioPlayer.play(AssetSource('Resources/mixkit-software-interface-start-2574.wav'));
       });
     }
   }

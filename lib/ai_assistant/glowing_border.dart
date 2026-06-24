@@ -75,15 +75,15 @@ class _AiGlowPainter extends CustomPainter {
     if (t < 0) t += 1.0;
 
     const palette = <Color>[
-      Color(0xFFFF9500), // 0.00 - Right: Orange
-      Color(0xFFFF2D55), // 0.15 - Bottom-right: Hot pink
-      Color(0xFFE91E63), // 0.25 - Bottom: Pink/Magenta
-      Color(0xFF9C27B0), // 0.40 - Bottom-left: Purple
-      Color(0xFF3D5AFE), // 0.50 - Left: Indigo/Blue
-      Color(0xFF651FFF), // 0.60 - Top-left: Deep purple
-      Color(0xFFD500F9), // 0.75 - Top: Vivid purple
-      Color(0xFFFF1744), // 0.85 - Top-right: Deep red
-      Color(0xFFFF9500), // 1.00 - Right: Orange (wrap)
+      Color(0xFFFFB300), // 0.00 - Right: Amber/Yellow
+      Color(0xFFFF8F00), // 0.15 - Bottom-right: Dark Amber
+      Color(0xFFFF6D00), // 0.25 - Bottom: Orange
+      Color(0xFFFF3D00), // 0.40 - Bottom-left: Deep Orange
+      Color(0xFFFF5252), // 0.50 - Left: Light Coral
+      Color(0xFFFF1744), // 0.60 - Top-left: Coral Red
+      Color(0xFFF50057), // 0.75 - Top: Pinkish Red
+      Color(0xFFFF5252), // 0.85 - Top-right: Light Coral
+      Color(0xFFFFB300), // 1.00 - Right: Amber/Yellow (wrap)
     ];
     const stops = <double>[0.0, 0.15, 0.25, 0.40, 0.50, 0.60, 0.75, 0.85, 1.0];
 
@@ -166,15 +166,15 @@ class _AiGlowPainter extends CustomPainter {
         final wavePaint = Paint()
           ..shader = RadialGradient(
             colors: [
-              Color(0xFFFF9500).withOpacity(0.38 * washIntensity), // Source: orange
-              Color(0xFFFF6B00).withOpacity(0.30 * washIntensity), // Deep orange
-              Color(0xFFFF2D55).withOpacity(0.24 * washIntensity), // Hot pink
-              Color(0xFFE91E63).withOpacity(0.18 * washIntensity), // Magenta
-              Color(0xFFD500F9).withOpacity(0.14 * washIntensity), // Purple
-              Color(0xFF7C4DFF).withOpacity(0.10 * washIntensity), // Violet
+              Color(0xFFFFD54F).withOpacity(0.38 * washIntensity), // Source: Bright Yellow
+              Color(0xFFFFB300).withOpacity(0.30 * washIntensity), // Amber
+              Color(0xFFFF8F00).withOpacity(0.24 * washIntensity), // Dark Amber
+              Color(0xFFFF6D00).withOpacity(0.18 * washIntensity), // Orange
+              Color(0xFFFF3D00).withOpacity(0.14 * washIntensity), // Deep Orange
+              Color(0xFFFF1744).withOpacity(0.10 * washIntensity), // Coral Red
               // ↓ Brightness bump — the soft wavefront ↓
-              Color(0xFFFF2D55).withOpacity(0.35 * washIntensity), // Wavefront glow
-              Color(0xFFE91E63).withOpacity(0.20 * washIntensity), // Wavefront fade
+              Color(0xFFFF5252).withOpacity(0.35 * washIntensity), // Wavefront glow (Light Coral)
+              Color(0xFFFF1744).withOpacity(0.20 * washIntensity), // Wavefront fade (Coral Red)
               Colors.transparent,                                   // Beyond wave
             ],
             stops: const [0.0, 0.10, 0.22, 0.36, 0.50, 0.64, 0.78, 0.90, 1.0],
