@@ -50,6 +50,7 @@ dependencies:
   # Wake Word
   vosk_flutter: ^0.3.0
   audioplayers: ^6.8.0
+  permission_handler: ^12.0.3
 
 dev_dependencies:
   flutter_test:

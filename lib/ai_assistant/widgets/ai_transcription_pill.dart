@@ -107,8 +107,9 @@ class _AiTranscriptionPillState extends State<AiTranscriptionPill> {
       return const SizedBox.shrink();
     }
 
-    final isWorking = _currentText.isEmpty;
-    final shouldShow = _isProcessing || _currentText.isNotEmpty;
+    final isSpeaking = _currentState == LiveSessionState.aiSpeaking;
+    final isWorking = _currentText.isEmpty && !isSpeaking;
+    final shouldShow = _isProcessing || _currentText.isNotEmpty || isSpeaking;
 
     return Material(
       type: MaterialType.transparency,
@@ -153,39 +154,57 @@ class _AiTranscriptionPillState extends State<AiTranscriptionPill> {
                       ),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        child: isWorking
+                        child: isSpeaking
                             ? Row(
                                 mainAxisSize: MainAxisSize.min,
-                                key: const ValueKey('working'),
-                                children: [
-                                  const CupertinoActivityIndicator(
-                                    color: Colors.white,
-                                    radius: 11,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Text(
-                                    "Đang xử lý...",
+                                key: const ValueKey('speaking'),
+                                children: const [
+                                  Icon(CupertinoIcons.speaker_2_fill, color: Colors.white, size: 16),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "AI đang nói...",
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 15, // Slightly smaller font
-                                      fontWeight: FontWeight.w400, // Lighter weight to match typical OS text
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w400,
                                       letterSpacing: 0.3,
                                     ),
                                   ),
                                 ],
                               )
-                            : Text(
-                                _currentText.trim(),
-                                key: const ValueKey('text'),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17, // Adjusted font size
-                                  fontWeight: FontWeight.w400, // Adjusted weight
-                                  height: 1.4,
-                                  letterSpacing: 0.3,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
+                            : isWorking
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    key: const ValueKey('working'),
+                                    children: const [
+                                      CupertinoActivityIndicator(
+                                        color: Colors.white,
+                                        radius: 11,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        "Đang xử lý...",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15, // Slightly smaller font
+                                          fontWeight: FontWeight.w400, // Lighter weight to match typical OS text
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    _currentText.trim(),
+                                    key: const ValueKey('text'),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 17, // Adjusted font size
+                                      fontWeight: FontWeight.w400, // Adjusted weight
+                                      height: 1.4,
+                                      letterSpacing: 0.3,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
                       ),
                     ),
                   ),

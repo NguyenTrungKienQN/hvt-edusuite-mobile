@@ -15,13 +15,12 @@ class LiveAudioService {
   WebSocketChannel? _channel;
   final AudioRecorder _audioRecorder = AudioRecorder();
   
+  StreamSubscription? _recordSub;
+  StreamSubscription? _wsSub;
+  
   // Audio player for raw PCM from Gemini (24kHz)
   FlutterSoundPlayer? _audioPlayer;
   StreamController<Uint8List>? _audioStreamController;
-  StreamSubscription<Food>? _playerSub;
-  
-  StreamSubscription? _recordSub;
-  StreamSubscription? _wsSub;
 
   final _stateController = StreamController<LiveSessionState>.broadcast();
   Stream<LiveSessionState> get stateStream => _stateController.stream;
@@ -114,6 +113,9 @@ class LiveAudioService {
             encoder: AudioEncoder.pcm16bits,
             sampleRate: _sampleRateInput,
             numChannels: 1,
+            echoCancel: true,
+            noiseSuppress: true,
+            autoGain: true,
           ),
         );
 
@@ -169,7 +171,9 @@ class LiveAudioService {
               if (part.containsKey('text')) {
                 final text = part['text'];
                 if (text != null && text.isNotEmpty) {
-                  _transcriptController.add(text);
+                  // Disabled: Backend is currently sending model "thinking text" instead of conversational text.
+                  // We now handle the UI by showing an "AI đang nói..." state instead.
+                  // _transcriptController.add(text);
                 }
               }
             }
@@ -196,7 +200,6 @@ class LiveAudioService {
   }
 
   bool _isPlayingAudio = false;
-  final List<Uint8List> _audioQueue = [];
 
   void _playAudioChunk(Uint8List pcmData) {
     if (!_isLive) return;
@@ -221,15 +224,13 @@ class LiveAudioService {
           codec: Codec.pcm16,
           sampleRate: _sampleRateOutput,
           numChannels: 1,
-          whenFinished: () {
-            _isPlayingAudio = false;
-            debugPrint("DEBUG: Audio playback finished");
-          },
+          interleaved: true,
+          bufferSize: 8192,
         );
       }
       
       // Feed the chunk
-      _audioPlayer!.foodSink?.add(FoodData(pcmData));
+      _audioPlayer!.uint8ListSink?.add(pcmData);
     } catch (e) {
       debugPrint("Error playing audio: $e");
       _isPlayingAudio = false;
