@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'dart:math';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:record/record.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
 
@@ -14,7 +14,11 @@ enum LiveSessionState { disconnected, connecting, listening, aiSpeaking, paused 
 class LiveAudioService {
   WebSocketChannel? _channel;
   final AudioRecorder _audioRecorder = AudioRecorder();
-  final FlutterTts _flutterTts = FlutterTts();
+  
+  // Audio player for raw PCM from Gemini (24kHz)
+  FlutterSoundPlayer? _audioPlayer;
+  StreamController<Uint8List>? _audioStreamController;
+  StreamSubscription<Food>? _playerSub;
   
   StreamSubscription? _recordSub;
   StreamSubscription? _wsSub;
@@ -25,6 +29,9 @@ class LiveAudioService {
   final _amplitudeController = StreamController<double>.broadcast();
   Stream<double> get amplitudeStream => _amplitudeController.stream;
 
+  final _transcriptController = StreamController<String>.broadcast();
+  Stream<String> get transcriptStream => _transcriptController.stream;
+
   LiveSessionState _currentState = LiveSessionState.disconnected;
   LiveSessionState get currentState => _currentState;
 
@@ -33,19 +40,6 @@ class LiveAudioService {
   
   bool _isLive = false;
   bool get isLive => _isLive;
-
-  LiveAudioService() {
-    _flutterTts.setStartHandler(() {
-      _setState(LiveSessionState.aiSpeaking);
-    });
-    _flutterTts.setCompletionHandler(() {
-      if (_isLive && !_isMuted) {
-        _setState(LiveSessionState.listening);
-      } else if (_isLive && _isMuted) {
-        _setState(LiveSessionState.paused);
-      }
-    });
-  }
 
   void _setState(LiveSessionState state) {
     if (_currentState != state) {
@@ -56,6 +50,8 @@ class LiveAudioService {
 
   // Configuration
   static const int _sampleRateInput = 16000;
+  static const int _sampleRateOutput = 24000; // Gemini outputs 24kHz
+  
   String get _wsUrl {
     final baseUrl = apiService.baseUrl;
     if (baseUrl.startsWith('https://')) {
@@ -63,6 +59,11 @@ class LiveAudioService {
     } else {
       return '${baseUrl.replaceFirst('http://', 'ws://')}/api/v1/ai/live';
     }
+  }
+
+  Future<void> _initAudioPlayer() async {
+    _audioPlayer = FlutterSoundPlayer();
+    await _audioPlayer!.openPlayer();
   }
 
   Future<void> startLiveSession() async {
@@ -73,7 +74,10 @@ class LiveAudioService {
       _setState(LiveSessionState.connecting);
       debugPrint("DEBUG: Starting Live Session...");
 
-      // 2. Setup WebSocket Connection
+      // Init audio player for Gemini responses
+      await _initAudioPlayer();
+
+      // Setup WebSocket Connection
       debugPrint("DEBUG: Getting access token...");
       final token = await authService.getToken() ?? '';
       
@@ -90,7 +94,7 @@ class LiveAudioService {
         rethrow;
       }
 
-      // Listen to incoming WebSocket messages from Gemini
+      // Listen to incoming WebSocket messages from backend
       _wsSub = _channel?.stream.listen((message) {
         _handleIncomingMessage(message);
       }, onError: (error) {
@@ -101,7 +105,7 @@ class LiveAudioService {
         stopLiveSession();
       });
 
-      // 3. Start Recording Audio (16kHz, 16-bit PCM Mono)
+      // Start Recording Audio (16kHz, 16-bit PCM Mono)
       debugPrint("DEBUG: Checking microphone permission...");
       if (await _audioRecorder.hasPermission()) {
         debugPrint("DEBUG: Starting audio recorder stream...");
@@ -144,15 +148,18 @@ class LiveAudioService {
     }
   }
 
-  final _transcriptController = StreamController<String>.broadcast();
-  Stream<String> get transcriptStream => _transcriptController.stream;
-
   void _handleIncomingMessage(dynamic message) {
-    if (message is String) {
+    if (message is Uint8List) {
+      // Binary frame = raw PCM audio from Gemini (24kHz 16-bit mono)
+      _playAudioChunk(message);
+    } else if (message is List<int>) {
+      // Also binary but as List<int>
+      _playAudioChunk(Uint8List.fromList(message));
+    } else if (message is String) {
       try {
         final data = jsonDecode(message);
         
-        // Extract serverContent modelTurn from Gemini response
+        // Text transcript from Gemini
         if (data.containsKey('serverContent') && 
             data['serverContent'].containsKey('modelTurn')) {
           
@@ -162,18 +169,70 @@ class LiveAudioService {
               if (part.containsKey('text')) {
                 final text = part['text'];
                 if (text != null && text.isNotEmpty) {
-                  // Broadcast text to UI
                   _transcriptController.add(text);
-                  // Speak text natively
-                  _flutterTts.speak(text);
                 }
               }
             }
           }
         }
+        
+        // turnComplete signal
+        if (data.containsKey('serverContent') &&
+            data['serverContent']['turnComplete'] == true) {
+          debugPrint("DEBUG: Gemini turn complete");
+          // Small delay then switch back to listening
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (_isLive && !_isMuted) {
+              _setState(LiveSessionState.listening);
+            } else if (_isLive && _isMuted) {
+              _setState(LiveSessionState.paused);
+            }
+          });
+        }
       } catch (e) {
-        debugPrint("Error parsing Gemini response: $e");
+        debugPrint("Error parsing response: $e");
       }
+    }
+  }
+
+  bool _isPlayingAudio = false;
+  final List<Uint8List> _audioQueue = [];
+
+  void _playAudioChunk(Uint8List pcmData) {
+    if (!_isLive) return;
+    _setState(LiveSessionState.aiSpeaking);
+    
+    // Feed audio directly to player
+    _feedAudioToPlayer(pcmData);
+  }
+
+  Future<void> _feedAudioToPlayer(Uint8List pcmData) async {
+    if (_audioPlayer == null) return;
+    
+    try {
+      if (!_isPlayingAudio) {
+        _isPlayingAudio = true;
+        
+        // Start a streaming player session
+        _audioStreamController = StreamController<Uint8List>();
+        
+        // Start playing from the stream
+        await _audioPlayer!.startPlayerFromStream(
+          codec: Codec.pcm16,
+          sampleRate: _sampleRateOutput,
+          numChannels: 1,
+          whenFinished: () {
+            _isPlayingAudio = false;
+            debugPrint("DEBUG: Audio playback finished");
+          },
+        );
+      }
+      
+      // Feed the chunk
+      _audioPlayer!.foodSink?.add(FoodData(pcmData));
+    } catch (e) {
+      debugPrint("Error playing audio: $e");
+      _isPlayingAudio = false;
     }
   }
 
@@ -242,6 +301,7 @@ class LiveAudioService {
   Future<void> stopLiveSession() async {
     _isLive = false;
     _isBackgroundPaused = false;
+    _isPlayingAudio = false;
     _setState(LiveSessionState.disconnected);
     _amplitudeController.add(0.0);
     
@@ -252,8 +312,19 @@ class LiveAudioService {
       await _audioRecorder.stop();
     }
 
-    // Stop playback
-    await _flutterTts.stop();
+    // Stop audio player
+    try {
+      if (_audioPlayer != null && _audioPlayer!.isPlaying) {
+        await _audioPlayer!.stopPlayer();
+      }
+      await _audioPlayer?.closePlayer();
+      _audioPlayer = null;
+    } catch (e) {
+      debugPrint("Error stopping audio player: $e");
+    }
+    
+    _audioStreamController?.close();
+    _audioStreamController = null;
 
     // Close WebSocket
     await _wsSub?.cancel();
