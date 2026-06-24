@@ -246,7 +246,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
         setState(() {
           _messages.add({
             'role': 'model',
-            'text': 'Linh Thú AI gặp lỗi khi xử lý câu hỏi này. Vui lòng thử lại sau.'
+            'text': 'HVT EduSuite AI gặp lỗi khi xử lý câu hỏi này. Vui lòng thử lại sau.'
           });
         });
       }
@@ -351,7 +351,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Hỏi bất cứ điều gì\nTrợ lý Linh Thú AI',
+                    'Hỏi bất cứ điều gì\nTrợ lý HVT EduSuite AI',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Color(0xFF2D3142),
@@ -363,8 +363,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
                   const SizedBox(height: 12),
                   Text(
                     widget.role == 'parent'
-                        ? 'Linh thú luôn ở đây để giúp giải đáp thông tin trường lớp và tình hình học tập nhanh nhất.'
-                        : 'Linh thú hỗ trợ soạn bài giảng, soạn thông báo gửi phụ huynh và phân tích tình hình lớp học.',
+                        ? 'HVT EduSuite AI luôn ở đây để giúp giải đáp thông tin trường lớp và tình hình học tập nhanh nhất.'
+                        : 'HVT EduSuite AI hỗ trợ soạn bài giảng, soạn thông báo gửi phụ huynh và phân tích tình hình lớp học.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.grey[600],
@@ -489,7 +489,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
           ),
           const SizedBox(height: 8),
           Text(
-            'Linh Thú AI có thể giúp gì?',
+            'HVT EduSuite AI có thể giúp gì?',
             style: TextStyle(color: Colors.grey[600], fontSize: 15),
           ),
           const SizedBox(height: 24),
@@ -546,7 +546,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Hỏi Linh Thú AI',
+                                'Hỏi HVT EduSuite AI',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 12,
@@ -890,7 +890,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Linh Thú là AI và có thể mắc sai sót.',
+                  'HVT EduSuite AI là AI và có thể mắc sai sót.',
                   style: TextStyle(
                     color: Colors.grey[450] ?? Colors.grey,
                     fontSize: 11,
@@ -971,7 +971,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Linh Thú đang suy nghĩ...',
+                  'HVT EduSuite AI đang suy nghĩ...',
                   style: TextStyle(color: Colors.grey[600], fontSize: 13, fontStyle: FontStyle.italic),
                 ),
               ],
@@ -1033,7 +1033,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> with TickerProvider
                 controller: _controller,
                 style: const TextStyle(fontSize: 17, color: Color(0xFF1F1F1F)),
                 decoration: InputDecoration(
-                  hintText: _isListening ? 'Đang nghe...' : 'Hỏi Linh Thú...',
+                  hintText: _isListening ? 'Đang nghe...' : 'Hỏi HVT EduSuite AI...',
                   hintStyle: TextStyle(color: _isListening ? const Color(0xFF6C63FF) : Colors.grey, fontSize: 17),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),

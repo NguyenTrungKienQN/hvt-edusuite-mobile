@@ -144,6 +144,9 @@ class LiveAudioService {
     }
   }
 
+  final _transcriptController = StreamController<String>.broadcast();
+  Stream<String> get transcriptStream => _transcriptController.stream;
+
   void _handleIncomingMessage(dynamic message) {
     if (message is String) {
       try {
@@ -159,6 +162,8 @@ class LiveAudioService {
               if (part.containsKey('text')) {
                 final text = part['text'];
                 if (text != null && text.isNotEmpty) {
+                  // Broadcast text to UI
+                  _transcriptController.add(text);
                   // Speak text natively
                   _flutterTts.speak(text);
                 }

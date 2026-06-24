@@ -22,6 +22,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/events_screen.dart';
 import 'firebase_options.dart';
+import 'ai_assistant/ai_overlay_manager.dart';
+import 'ai_assistant/wake_word_service.dart';
 
 class RestartWidget extends StatefulWidget {
   final Widget child;
@@ -66,6 +68,7 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     await NotificationService.instance.init();
+    wakeWordService.init(); // Initialize offline wake word
   } catch (e) {
     debugPrint("Firebase init failed: $e");
   }
@@ -93,6 +96,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      builder: (context, child) => AiOverlayManager(child: child!),
       title: 'HVT EduSuite Mobile',
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
@@ -519,58 +523,90 @@ class _ParentDashboardState extends ConsumerState<ParentDashboard> {
                       ),
                       const SizedBox(height: 16),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Lớp', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
-                              const SizedBox(height: 2),
-                              Text(widget.student.lop, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142))),
-                            ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Lớp', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    widget.student.lop, 
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142)),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(width: 28),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Giới tính', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
-                              const SizedBox(height: 2),
-                              Text(widget.student.gioiTinh, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142))),
-                            ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Giới tính', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    widget.student.gioiTinh, 
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142)),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Ngày sinh', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
-                              const SizedBox(height: 2),
-                              Text(
-                                widget.student.ngaySinh is DateTime
-                                    ? "${widget.student.ngaySinh.day.toString().padLeft(2, '0')}/${widget.student.ngaySinh.month.toString().padLeft(2, '0')}/${widget.student.ngaySinh.year}"
-                                    : widget.student.ngaySinh.toString(),
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 28),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Mã thẻ', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
-                              const SizedBox(height: 2),
-                              Text(
-                                widget.student.uidThe,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                  color: Color(0xFF2D3142),
-                                  letterSpacing: 1.0,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Ngày sinh', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    widget.student.ngaySinh is DateTime
+                                        ? "${widget.student.ngaySinh.day.toString().padLeft(2, '0')}/${widget.student.ngaySinh.month.toString().padLeft(2, '0')}/${widget.student.ngaySinh.year}"
+                                        : widget.student.ngaySinh.toString(),
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142)),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Mã thẻ', style: TextStyle(fontSize: 11, color: const Color(0xFF2D3142).withValues(alpha: 0.5))),
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    widget.student.uidThe,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                      color: Color(0xFF2D3142),
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
