@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:record/record.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:audio_session/audio_session.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
 
@@ -61,6 +62,23 @@ class LiveAudioService {
   }
 
   Future<void> _initAudioPlayer() async {
+    // Configure audio session for Voice Communication to enable Hardware Acoustic Echo Cancellation (AEC)
+    final session = await AudioSession.instance;
+    await session.configure(AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.allowBluetooth | AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionMode: AVAudioSessionMode.voiceChat,
+      avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: const AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        flags: AndroidAudioFlags.none,
+        usage: AndroidAudioUsage.voiceCommunication,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      androidWillPauseWhenDucked: true,
+    ));
+
     _audioPlayer = FlutterSoundPlayer();
     await _audioPlayer!.openPlayer();
   }
@@ -120,18 +138,22 @@ class LiveAudioService {
         );
 
         _recordSub = recordStream.listen((data) {
-          // Calculate basic amplitude (RMS) from 16-bit PCM for the UI
-          if (!_isMuted) {
-            double sum = 0;
-            final int16List = Int16List.view(data.buffer);
-            for (int i = 0; i < int16List.length; i++) {
-              sum += int16List[i] * int16List[i];
-            }
-            double rms = sqrt(sum / int16List.length) / 32768.0;
-            _amplitudeController.add(rms);
+          // Software mute: Do not process microphone input while AI is speaking to prevent echo loops
+          // (Hardware AEC is unreliable on some Android devices)
+          if (_isMuted || _currentState == LiveSessionState.aiSpeaking) {
+            return;
           }
 
-          if (_channel != null && _channel!.closeCode == null && !_isMuted) {
+          // Calculate basic amplitude (RMS) from 16-bit PCM for the UI
+          double sum = 0;
+          final int16List = Int16List.view(data.buffer);
+          for (int i = 0; i < int16List.length; i++) {
+            sum += int16List[i] * int16List[i];
+          }
+          double rms = sqrt(sum / int16List.length) / 32768.0;
+          _amplitudeController.add(rms);
+
+          if (_channel != null && _channel!.closeCode == null) {
             // Send raw bytes to the backend
             _channel!.sink.add(data);
           }
@@ -304,17 +326,20 @@ class LiveAudioService {
         );
 
         _recordSub = recordStream.listen((data) {
-          if (!_isMuted) {
-            double sum = 0;
-            final int16List = Int16List.view(data.buffer);
-            for (int i = 0; i < int16List.length; i++) {
-              sum += int16List[i] * int16List[i];
-            }
-            double rms = sqrt(sum / int16List.length) / 32768.0;
-            _amplitudeController.add(rms);
+          // Software mute: Do not process microphone input while AI is speaking
+          if (_isMuted || _currentState == LiveSessionState.aiSpeaking) {
+            return;
           }
 
-          if (_channel != null && _channel!.closeCode == null && !_isMuted) {
+          double sum = 0;
+          final int16List = Int16List.view(data.buffer);
+          for (int i = 0; i < int16List.length; i++) {
+            sum += int16List[i] * int16List[i];
+          }
+          double rms = sqrt(sum / int16List.length) / 32768.0;
+          _amplitudeController.add(rms);
+
+          if (_channel != null && _channel!.closeCode == null) {
             _channel!.sink.add(data);
           }
         });
