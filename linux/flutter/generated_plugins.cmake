@@ -7,7 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_secure_storage_linux
   flutter_sound
   record_linux
-  vosk_flutter
+  vosk_flutter_service
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

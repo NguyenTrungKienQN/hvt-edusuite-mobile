@@ -15,7 +15,7 @@ import 'dart:math' as math;
 class GlowingBorder extends StatefulWidget {
   final Animation<double> animation;
 
-  const GlowingBorder({Key? key, required this.animation}) : super(key: key);
+  const GlowingBorder({super.key, required this.animation});
 
   @override
   State<GlowingBorder> createState() => _GlowingBorderState();
@@ -99,7 +99,7 @@ class _AiGlowPainter extends CustomPainter {
   /// Intro visibility mask for border glow at perimeter position [t].
   double _introVisibility(double t) {
     if (isReversing) return introProgress;
-    
+
     t = t % 1.0;
 
     final rightReach = (introProgress / 0.6).clamp(0.0, 1.0) * 0.30;
@@ -166,16 +166,24 @@ class _AiGlowPainter extends CustomPainter {
         final wavePaint = Paint()
           ..shader = RadialGradient(
             colors: [
-              Color(0xFFFFD54F).withOpacity(0.38 * washIntensity), // Source: Bright Yellow
-              Color(0xFFFFB300).withOpacity(0.30 * washIntensity), // Amber
-              Color(0xFFFF8F00).withOpacity(0.24 * washIntensity), // Dark Amber
-              Color(0xFFFF6D00).withOpacity(0.18 * washIntensity), // Orange
-              Color(0xFFFF3D00).withOpacity(0.14 * washIntensity), // Deep Orange
-              Color(0xFFFF1744).withOpacity(0.10 * washIntensity), // Coral Red
+              const Color(0xFFFFD54F).withValues(
+                  alpha: 0.38 * washIntensity), // Source: Bright Yellow
+              const Color(0xFFFFB300)
+                  .withValues(alpha: 0.30 * washIntensity), // Amber
+              const Color(0xFFFF8F00)
+                  .withValues(alpha: 0.24 * washIntensity), // Dark Amber
+              const Color(0xFFFF6D00)
+                  .withValues(alpha: 0.18 * washIntensity), // Orange
+              const Color(0xFFFF3D00)
+                  .withValues(alpha: 0.14 * washIntensity), // Deep Orange
+              const Color(0xFFFF1744)
+                  .withValues(alpha: 0.10 * washIntensity), // Coral Red
               // ↓ Brightness bump — the soft wavefront ↓
-              Color(0xFFFF5252).withOpacity(0.35 * washIntensity), // Wavefront glow (Light Coral)
-              Color(0xFFFF1744).withOpacity(0.20 * washIntensity), // Wavefront fade (Coral Red)
-              Colors.transparent,                                   // Beyond wave
+              const Color(0xFFFF5252).withValues(
+                  alpha: 0.35 * washIntensity), // Wavefront glow (Light Coral)
+              const Color(0xFFFF1744).withValues(
+                  alpha: 0.20 * washIntensity), // Wavefront fade (Coral Red)
+              Colors.transparent, // Beyond wave
             ],
             stops: const [0.0, 0.10, 0.22, 0.36, 0.50, 0.64, 0.78, 0.90, 1.0],
           ).createShader(waveRect);
@@ -187,7 +195,7 @@ class _AiGlowPainter extends CustomPainter {
     // PART 2: BORDER GLOW (persists after the wave recedes)
     // ════════════════════════════════════════════════════════════════
 
-    final int segments = 48;
+    const int segments = 48;
     final colors = <Color>[];
     final stops = <double>[];
 
@@ -200,11 +208,12 @@ class _AiGlowPainter extends CustomPainter {
 
       final breatheOpacity = 0.75 + 0.25 * breathe;
       final alpha = (vis * breatheOpacity).clamp(0.0, 1.0);
-      colors.add(color.withOpacity(alpha));
+      colors.add(color.withValues(alpha: alpha));
       stops.add(t);
     }
 
-    final shader = SweepGradient(colors: colors, stops: stops).createShader(rect);
+    final shader =
+        SweepGradient(colors: colors, stops: stops).createShader(rect);
 
     final introThicknessCurve =
         Curves.easeOutCubic.transform(introProgress.clamp(0.0, 1.0));

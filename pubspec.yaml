@@ -46,13 +46,13 @@ dependencies:
   record: ^7.1.0
   lottie: ^3.1.2
   flutter_sound: ^9.17.8
-
   # Wake Word
-  vosk_flutter: ^0.3.0
   audioplayers: ^6.8.0
   permission_handler: ^12.0.3
   audio_session: ^0.2.3
-
+  path_provider: ^2.1.6
+  vosk_flutter_service: ^0.1.2
+  archive: ^4.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -68,6 +68,8 @@ flutter:
     - assets/appicon.png
     - assets/linhthu.png
     - assets/Resources/
+    - assets/models/vosk-model-small-en-us.zip
+    - assets/models/vosk-model-small-vn.zip
     - assets/models/vosk-model-en.zip
 
 flutter_launcher_icons:

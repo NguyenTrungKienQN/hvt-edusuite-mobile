@@ -3,27 +3,30 @@ import 'package:audioplayers/audioplayers.dart';
 import 'glowing_border.dart';
 import 'widgets/ai_transcription_pill.dart';
 import '../services/live_audio_service.dart';
+import 'widgets/ai_orb/ai_orb.dart';
+import 'widgets/ai_orb/orb_state.dart';
+import 'floating_text_chat.dart'; // We will create this next
+
+enum AiOverlayMode { hidden, voice, text, limbo }
 
 class AiOverlayController extends ChangeNotifier {
-  bool _isActive = false;
-  bool get isActive => _isActive;
-  void Function()? _showOverlayCallback;
-  void Function()? _hideOverlayCallback;
+  AiOverlayMode _mode = AiOverlayMode.hidden;
+  AiOverlayMode get mode => _mode;
 
+  bool get isActive => _mode != AiOverlayMode.hidden;
+
+  void setMode(AiOverlayMode newMode) {
+    _mode = newMode;
+    notifyListeners();
+  }
+
+  // Backwards compatibility for wake word service
   void showOverlay() {
-    _showOverlayCallback?.call();
-    if (!_isActive) {
-      _isActive = true;
-      notifyListeners();
-    }
+    setMode(AiOverlayMode.voice);
   }
 
   void hideOverlay() {
-    _hideOverlayCallback?.call();
-    if (_isActive) {
-      _isActive = false;
-      notifyListeners();
-    }
+    setMode(AiOverlayMode.hidden);
   }
 }
 
@@ -38,10 +41,10 @@ class AiOverlayManager extends StatefulWidget {
   State<AiOverlayManager> createState() => _AiOverlayManagerState();
 }
 
-class _AiOverlayManagerState extends State<AiOverlayManager> with TickerProviderStateMixin {
+class _AiOverlayManagerState extends State<AiOverlayManager>
+    with TickerProviderStateMixin {
   late AnimationController _glowController;
   final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _overlayActive = false;
 
   @override
   void initState() {
@@ -52,85 +55,120 @@ class _AiOverlayManagerState extends State<AiOverlayManager> with TickerProvider
       duration: const Duration(milliseconds: 1500),
     );
 
-    // Pre-load audio to eliminate disk I/O lag when triggering
     _audioPlayer.setSource(AssetSource('Resources/AISound.wav'));
 
-    aiOverlayController._showOverlayCallback = _showOverlay;
-    aiOverlayController._hideOverlayCallback = _hideOverlay;
-  }
-
-  void _showOverlay() {
-    if (!_overlayActive) {
-      setState(() {
-        _overlayActive = true;
-      });
-      // Start the visual animation immediately
-      _glowController.forward(from: 0.0);
-      
-      // Stop resets the player state. Play will replay from the beginning.
-      // Since it was played/loaded once, it is cached and instant.
-      _audioPlayer.stop().then((_) {
-        _audioPlayer.play(AssetSource('Resources/AISound.wav'));
-      });
-    }
-  }
-
-  void _hideOverlay() {
-    if (_overlayActive) {
-      _glowController.reverse().then((_) {
-        if (mounted) {
-          setState(() {
-            _overlayActive = false;
-          });
-        }
-      });
-    }
-  }
-
-  void _dismissOverlay() {
-    aiOverlayController.hideOverlay();
-    liveAudioService.stopLiveSession();
+    aiOverlayController.addListener(_onModeChanged);
   }
 
   @override
   void dispose() {
+    aiOverlayController.removeListener(_onModeChanged);
     _glowController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
 
+  void _onModeChanged() {
+    final mode = aiOverlayController.mode;
+    if (mode == AiOverlayMode.voice) {
+      if (!_glowController.isAnimating) {
+        _glowController.forward(from: 0.0);
+        _audioPlayer.stop().then((_) {
+          _audioPlayer.play(AssetSource('Resources/AISound.wav'));
+        });
+      }
+    } else {
+      _glowController.reverse();
+    }
+    setState(() {});
+  }
+
+  void _handleBackgroundTap() {
+    final mode = aiOverlayController.mode;
+    if (mode == AiOverlayMode.text) {
+      // Dismiss keyboard and switch to limbo
+      FocusManager.instance.primaryFocus?.unfocus();
+      aiOverlayController.setMode(AiOverlayMode.limbo);
+    } else if (mode == AiOverlayMode.limbo) {
+      // Completely dismiss
+      aiOverlayController.hideOverlay();
+    } else if (mode == AiOverlayMode.voice) {
+      // Completely dismiss
+      liveAudioService.stopLiveSession();
+      aiOverlayController.hideOverlay();
+    }
+  }
+
+  void _handleOrbSingleTap() {
+    final mode = aiOverlayController.mode;
+    if (mode == AiOverlayMode.limbo) {
+      aiOverlayController.setMode(AiOverlayMode.voice);
+      liveAudioService.startLiveSession();
+    }
+  }
+
+  void _handleOrbDoubleTap() {
+    final mode = aiOverlayController.mode;
+    if (mode == AiOverlayMode.voice || mode == AiOverlayMode.limbo) {
+      liveAudioService.stopLiveSession();
+      aiOverlayController.setMode(AiOverlayMode.text);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final mode = aiOverlayController.mode;
+
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Stack(
         children: [
-          // Giao diện ứng dụng gốc — luôn hiển thị đầy đủ
+          // 1. Giao diện gốc
           widget.child,
-          
-          // Lớp chặn tap để đóng overlay (vô hình, trong suốt)
-          if (_overlayActive)
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _dismissOverlay,
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-            
-          // Viền sáng Apple Intelligence — lan tỏa từ cạnh phải
-          if (_overlayActive)
-            IgnorePointer(
-              child: GlowingBorder(
-                animation: _glowController,
-              ),
-            ),
 
-          // The AI-style live transcription and processing pill
-          if (_overlayActive)
-            const IgnorePointer(
-              child: AiTranscriptionPill(),
+          // 2. Lớp chặn tap background
+          Positioned.fill(
+            child: mode != AiOverlayMode.hidden
+                ? GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _handleBackgroundTap,
+                    child: Container(color: Colors.transparent),
+                  )
+                : const SizedBox.shrink(),
+          ),
+
+          // 3. Glowing Border (Chỉ hiện ở Voice mode)
+          IgnorePointer(
+            child: mode == AiOverlayMode.voice || _glowController.isAnimating
+                ? GlowingBorder(animation: _glowController)
+                : const SizedBox.shrink(),
+          ),
+
+          // 4. Khung chat nổi và Orb morphing (Bắt buộc phải có Overlay để TextField nhận phím)
+          Positioned.fill(
+            key: const ValueKey('ai_overlay_layer'),
+            child: Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  builder: (context) => ListenableBuilder(
+                    listenable: aiOverlayController,
+                    builder: (context, child) => FloatingTextChat(
+                      mode: aiOverlayController.mode,
+                      onOrbSingleTap: _handleOrbSingleTap,
+                      onOrbDoubleTap: _handleOrbDoubleTap,
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
+
+          // 5. Transcription Pill (Chỉ hiện ở Voice mode)
+          IgnorePointer(
+            child: mode == AiOverlayMode.voice
+                ? const AiTranscriptionPill()
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );

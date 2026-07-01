@@ -68,10 +68,12 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     await NotificationService.instance.init();
-    wakeWordService.init(); // Initialize offline wake word
   } catch (e) {
     debugPrint("Firebase init failed: $e");
   }
+
+  // Initialize offline wake word independently of Firebase
+  wakeWordService.init();
   runApp(
     const RestartWidget(
       child: ProviderScope(

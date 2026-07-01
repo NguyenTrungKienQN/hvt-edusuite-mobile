@@ -352,7 +352,6 @@ class LiveAudioService {
     _isLive = false;
     _isBackgroundPaused = false;
     _isPlayingAudio = false;
-    _setState(LiveSessionState.disconnected);
     _amplitudeController.add(0.0);
     
     // Stop recording
@@ -380,6 +379,9 @@ class LiveAudioService {
     await _wsSub?.cancel();
     _channel?.sink.close();
     _channel = null;
+
+    // Set state to disconnected only AFTER all audio resources are fully released
+    _setState(LiveSessionState.disconnected);
   }
 }
 

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'package:vosk_flutter/vosk_flutter.dart';
+import 'package:vosk_flutter_service/vosk_flutter_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'ai_overlay_manager.dart';
 import '../services/live_audio_service.dart';
@@ -37,12 +37,10 @@ class WakeWordService {
       _speechService = await _vosk.initSpeechService(_recognizer!);
       
       _speechService?.onPartial().listen((partialResult) {
-        print("RAW VOSK PARTIAL: $partialResult");
         _processResult(partialResult);
       });
       
       _speechService?.onResult().listen((result) {
-        print("RAW VOSK RESULT: $result");
         _processResult(result);
       });
 
@@ -54,14 +52,17 @@ class WakeWordService {
       });
 
       startListening();
-      print("DEBUG: WakeWordService initialized and listening.");
+      debugPrint("DEBUG: WakeWordService initialized and listening.");
     } catch (e) {
-      print("WAKE_WORD_ERROR: $e");
+      if (e is PlatformException && e.code == 'INITIALIZE_FAIL') {
+        debugPrint("⚠️ WAKE_WORD_WARNING: Vosk Native không hỗ trợ Hot Restart. Wake Word sẽ tạm ngưng hoạt động ở lần Hot Restart này. Hãy dùng thao tác chạm hoặc gõ chữ để test tiếp, hoặc khởi động lại app (q -> flutter run) nếu muốn test giọng nói.");
+      } else {
+        debugPrint("WAKE_WORD_ERROR: $e");
+      }
     }
   }
 
   void _processResult(String resultText) {
-    print("RAW VOSK: $resultText");
     final lowerText = resultText.toLowerCase();
 
     // Wake words - Using English model for "Hey AI"
@@ -71,7 +72,7 @@ class WakeWordService {
         lowerText.contains("hey i") ||
         lowerText.contains("a i")) { 
       
-      print("DEBUG: Wake Word detected! Triggering Assistant...");
+      debugPrint("DEBUG: Wake Word detected! Triggering Assistant...");
       _triggerAssistant();
     }
   }
@@ -104,9 +105,9 @@ class WakeWordService {
   void startListening() async {
     if (!_isListening) {
       bool? started = await _speechService?.start(onRecognitionError: (e) {
-        print("VOSK NATIVE ERROR: $e");
+        debugPrint("VOSK NATIVE ERROR: $e");
       });
-      print("VOSK START_LISTENING RESULT: $started");
+      debugPrint("VOSK START_LISTENING RESULT: $started");
       _isListening = true;
     }
   }
